@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import DashboardPrintButton from "./DashboardPrintButton";
+import SaveConfigButton from "./SaveConfigButton";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -276,13 +277,7 @@ export default async function DashboardPage() {
               ))}
 
               <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  className="inline-flex items-center px-6 py-2.5 rounded-md text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
-                  style={{ background: "#C55A11" }}
-                >
-                  Save Configuration
-                </button>
+                <SaveConfigButton />
               </div>
             </form>
           </div>
