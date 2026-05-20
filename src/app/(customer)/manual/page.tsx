@@ -14,11 +14,18 @@ export default async function ManualPage() {
 
   const supabase = createServiceClient();
 
-  const { data: customer } = await supabase
-    .from("customers")
-    .select("id, company_name")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: memberRow } = await (supabase as any)
+    .from("customer_members")
+    .select("customer_id")
     .eq("clerk_user_id", userId)
     .single();
+
+  const customerId = (memberRow as { customer_id: string } | null)?.customer_id;
+
+  const { data: customer } = customerId
+    ? await supabase.from("customers").select("id, company_name").eq("id", customerId).single()
+    : { data: null };
 
   if (!customer) redirect("/dashboard");
 

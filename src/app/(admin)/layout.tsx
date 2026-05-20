@@ -24,6 +24,12 @@ export default async function AdminLayout({
           </span>
           <nav className="flex items-stretch gap-1">
             <Link
+              href="/admin"
+              className="flex items-center px-3 text-sm font-medium text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-900 transition-colors"
+            >
+              Dashboard
+            </Link>
+            <Link
               href="/admin/customers"
               className="flex items-center px-3 text-sm font-medium text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-900 transition-colors"
             >

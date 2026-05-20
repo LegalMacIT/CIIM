@@ -6,20 +6,24 @@ import { createServiceClient } from "@/lib/supabase";
 import { encrypt, isCredentialField } from "@/lib/encryption";
 import { BOOLEAN_KEYS } from "@/lib/fields";
 
+async function resolveCustomerId(userId: string): Promise<string> {
+  const supabase = createServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("customer_members")
+    .select("customer_id")
+    .eq("clerk_user_id", userId)
+    .single();
+  if (error || !data?.customer_id) throw new Error("Customer record not found");
+  return data.customer_id as string;
+}
+
 export async function saveFormValues(formData: FormData) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
+  const customerId = await resolveCustomerId(userId);
   const supabase = createServiceClient();
-
-  // Resolve the customer row for this Clerk user
-  const { data: customer, error: custError } = await supabase
-    .from("customers")
-    .select("id")
-    .eq("clerk_user_id", userId)
-    .single();
-
-  if (custError || !customer) throw new Error("Customer record not found");
 
   const entries: { customer_id: string; field_key: string; field_value: string }[] = [];
 
@@ -29,20 +33,17 @@ export async function saveFormValues(formData: FormData) {
     let stored = value;
 
     if (isCredentialField(key)) {
-      // Encrypt credentials before storage; store empty string as empty (no encryption)
       stored = value.trim() ? await encrypt(value) : "";
     } else if (BOOLEAN_KEYS.has(key)) {
-      // Checkboxes: "on" → "x", anything else → ""
       stored = value === "on" ? "x" : "";
     }
 
-    entries.push({ customer_id: customer.id, field_key: key, field_value: stored });
+    entries.push({ customer_id: customerId, field_key: key, field_value: stored });
   }
 
-  // Boolean fields not present in FormData mean unchecked — set them to ""
   for (const boolKey of BOOLEAN_KEYS) {
     if (!formData.has(boolKey)) {
-      entries.push({ customer_id: customer.id, field_key: boolKey, field_value: "" });
+      entries.push({ customer_id: customerId, field_key: boolKey, field_value: "" });
     }
   }
 
@@ -61,20 +62,13 @@ export async function saveBooleanField(fieldKey: string, enabled: boolean) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
+  const customerId = await resolveCustomerId(userId);
   const supabase = createServiceClient();
-
-  const { data: customer, error: custError } = await supabase
-    .from("customers")
-    .select("id")
-    .eq("clerk_user_id", userId)
-    .single();
-
-  if (custError || !customer) throw new Error("Customer record not found");
 
   const { error } = await supabase
     .from("form_values")
     .upsert(
-      { customer_id: customer.id, field_key: fieldKey, field_value: enabled ? "x" : "" },
+      { customer_id: customerId, field_key: fieldKey, field_value: enabled ? "x" : "" },
       { onConflict: "customer_id,field_key" }
     );
 

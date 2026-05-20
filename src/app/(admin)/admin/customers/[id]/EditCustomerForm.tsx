@@ -12,7 +12,6 @@ interface Props {
   defaultValues: {
     company_name: string;
     slug: string;
-    clerk_user_id: string;
   };
 }
 
@@ -39,16 +38,6 @@ export function EditCustomerForm({ id, defaultValues }: Props) {
       <div className="space-y-1.5">
         <Label htmlFor="slug">Slug</Label>
         <Input id="slug" name="slug" defaultValue={defaultValues.slug} required />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="clerk_user_id">Clerk User ID</Label>
-        <Input
-          id="clerk_user_id"
-          name="clerk_user_id"
-          defaultValue={defaultValues.clerk_user_id}
-          required
-          className="font-mono text-sm"
-        />
       </div>
       <div className="flex gap-3">
         <Button type="submit" disabled={isPending}>
