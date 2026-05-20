@@ -2,7 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase";
-import { FIELD_GROUPS, BOOLEAN_KEYS, CREDENTIAL_KEYS } from "@/lib/fields";
+import { FIELD_GROUPS, BOOLEAN_KEYS, CREDENTIAL_KEYS, computeDerivedDefaults } from "@/lib/fields";
 import { adminSaveFormValues } from "@/app/actions/customers";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -53,6 +53,7 @@ export default async function AdminConfigurePage({
   const filledCount = nonBooleanFields.filter((f) => values[f.key]).length;
   const fillPercent = Math.round((filledCount / nonBooleanFields.length) * 100);
 
+  const derivedValues = computeDerivedDefaults(values);
   const saveForCustomer = adminSaveFormValues.bind(null, id);
 
   return (
@@ -154,7 +155,7 @@ export default async function AdminConfigurePage({
                                 : "text"
                             }
                             placeholder={isCredential && hasSavedCredential ? "••••••••" : (field.placeholder ?? "")}
-                            defaultValue={isCredential ? "" : (values[field.key] ?? "")}
+                            defaultValue={isCredential ? "" : (values[field.key] || derivedValues[field.key] || "")}
                             autoComplete={field.type === "password" ? "new-password" : undefined}
                           />
                           {field.hint && <p className="ciim-dash-hint">{field.hint}</p>}

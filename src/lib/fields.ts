@@ -88,9 +88,9 @@ export const FIELD_GROUPS: FieldGroup[] = [
     fields: [
       { key: "final_trans_date", label: "Final Transition Date", type: "date" },
       { key: "final_trans_hour", label: "Transition Start Time", type: "time", hint: "e.g. 6:00 PM" },
-      { key: "final_trans_hour30", label: "Transition End Time (+30 min)", type: "time", hint: "e.g. 6:30 PM" },
+      { key: "final_trans_hour30", label: "Final Notification Time (-30 min)", type: "time", hint: "e.g. 5:30 PM" },
       { key: "final_timezone", label: "Timezone", type: "text", placeholder: "Eastern Time (ET)" },
-      { key: "uat_doc_date", label: "UAT Document Date", type: "date" },
+      { key: "uat_doc_date", label: "Last Delta Migration Date", type: "date" },
       { key: "uat_deadline_date", label: "UAT Deadline Date", type: "date" },
     ],
   },
@@ -127,3 +127,48 @@ export const FIELD_GROUPS: FieldGroup[] = [
     ],
   },
 ];
+
+/**
+ * Compute derived field defaults based on other saved values.
+ * Only fills a key if that key has no saved value.
+ */
+export function computeDerivedDefaults(values: Record<string, string>): Record<string, string> {
+  const derived: Record<string, string> = {};
+
+  // cim_site = cim_url without "https://"
+  if (!values["cim_site"] && values["cim_url"]) {
+    derived["cim_site"] = values["cim_url"].replace(/^https?:\/\//, "");
+  }
+
+  // work_site = work_url without "https://"
+  if (!values["work_site"] && values["work_url"]) {
+    derived["work_site"] = values["work_url"].replace(/^https?:\/\//, "");
+  }
+
+  // uat_deadline_date = final_trans_date − 7 days (YYYY-MM-DD)
+  if (!values["uat_deadline_date"] && values["final_trans_date"]) {
+    try {
+      const d = new Date(values["final_trans_date"] + "T12:00:00");
+      d.setDate(d.getDate() - 7);
+      derived["uat_deadline_date"] = d.toISOString().split("T")[0];
+    } catch {
+      // ignore invalid date
+    }
+  }
+
+  // final_trans_hour30 = final_trans_hour − 30 min (HH:mm)
+  if (!values["final_trans_hour30"] && values["final_trans_hour"]) {
+    try {
+      const [h, m] = values["final_trans_hour"].split(":").map(Number);
+      const total = h * 60 + m - 30;
+      const wrapped = ((total % (24 * 60)) + 24 * 60) % (24 * 60);
+      derived["final_trans_hour30"] =
+        String(Math.floor(wrapped / 60)).padStart(2, "0") + ":" +
+        String(wrapped % 60).padStart(2, "0");
+    } catch {
+      // ignore invalid time
+    }
+  }
+
+  return derived;
+}

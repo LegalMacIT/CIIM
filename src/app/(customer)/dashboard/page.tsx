@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase";
-import { FIELD_GROUPS, BOOLEAN_KEYS, CREDENTIAL_KEYS } from "@/lib/fields";
+import { FIELD_GROUPS, BOOLEAN_KEYS, CREDENTIAL_KEYS, computeDerivedDefaults } from "@/lib/fields";
 import { saveFormValues } from "@/app/actions/form-values";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -56,6 +56,8 @@ export default async function DashboardPage() {
       .filter((r) => CREDENTIAL_KEYS.has(r.field_key) && r.field_value)
       .map((r) => r.field_key)
   );
+
+  const derivedValues = computeDerivedDefaults(values);
 
   // Count filled non-boolean fields for the completion indicator
   const nonBooleanFields = FIELD_GROUPS.flatMap((g) =>
@@ -258,7 +260,7 @@ export default async function DashboardPage() {
                                     : "text"
                                 }
                                 placeholder={isCredential && hasSavedCredential ? "••••••••" : (field.placeholder ?? "")}
-                                defaultValue={isCredential ? "" : (values[field.key] ?? "")}
+                                defaultValue={isCredential ? "" : (values[field.key] || derivedValues[field.key] || "")}
                                 autoComplete={field.type === "password" ? "new-password" : undefined}
                               />
                               {field.hint && (
