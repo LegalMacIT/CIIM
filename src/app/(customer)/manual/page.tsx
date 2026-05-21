@@ -227,6 +227,10 @@ export default async function ManualPage() {
         .ciim-section-content table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.9375rem; }
         .ciim-section-content td, .ciim-section-content th { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; }
         .ciim-section-content th { background: #f5f5f5; font-weight: 600; text-align: left; }
+        /* Layout tables (no header cells) — stack cells as single column */
+        .ciim-section-content table:not(:has(th)) { border: none; width: auto; }
+        .ciim-section-content table:not(:has(th)) tr { display: block; }
+        .ciim-section-content table:not(:has(th)) td { display: block; border: none; padding: 0.1rem 0; }
         .ciim-section-content a { color: #1473e6; text-decoration: none; }
         .ciim-section-content a:hover { text-decoration: underline; }
         .ciim-missing { background: #fef3c7; color: #92400e; padding: 0 0.25rem; border-radius: 0.2rem; font-style: italic; font-size: 0.875em; }

@@ -137,7 +137,7 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
     const block = blocks[i];
     const text = headingText(block);
 
-    if (/^\s*IT Tasks\s*$/.test(text)) {
+    if (/^\s*(IT Tasks|Initial Setup Tasks)\s*$/.test(text)) {
       const boxItems: string[] = [];
       i++;
       while (i < blocks.length && isCalloutItem(blocks[i])) {
@@ -146,7 +146,7 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
       if (boxItems.length > 0) {
         output.push(
           `<div class="callout-it-box">` +
-            `<div class="callout-it-header">{{firm_company_nickname}} IT Tasks</div>` +
+            `<div class="callout-it-header">{{firm_company_nickname}} ${text.trim()}</div>` +
             boxItems.join("") +
             `</div>`
         );
