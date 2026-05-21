@@ -231,6 +231,10 @@ export default async function ManualPage() {
         .ciim-section-content table:not(:has(th)) { border: none; width: auto; }
         .ciim-section-content table:not(:has(th)) tr { display: block; }
         .ciim-section-content table:not(:has(th)) td { display: block; border: none; padding: 0.1rem 0; }
+        /* Callout boxes are always single-column — flatten any table inside them */
+        .callout-it-box table { border: none; width: 100%; }
+        .callout-it-box table tr { display: block; }
+        .callout-it-box table td, .callout-it-box table th { display: block; border: none; padding: 0.1rem 0; }
         .ciim-section-content a { color: #1473e6; text-decoration: none; }
         .ciim-section-content a:hover { text-decoration: underline; }
         .ciim-missing { background: #fef3c7; color: #92400e; padding: 0 0.25rem; border-radius: 0.2rem; font-style: italic; font-size: 0.875em; }
