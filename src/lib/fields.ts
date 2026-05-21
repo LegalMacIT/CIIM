@@ -39,6 +39,7 @@ export const BOOLEAN_KEYS = new Set([
   "Foxit_PDF",
   "File_Transfer",
   "Go_Live",
+  "reporting_tool",
 ]);
 
 export const FIELD_GROUPS: FieldGroup[] = [
@@ -124,6 +125,7 @@ export const FIELD_GROUPS: FieldGroup[] = [
       { key: "Litera_Compare", label: "Litera Compare Integration", type: "boolean" },
       { key: "Power_PDF", label: "Tungsten Power PDF Integration", type: "boolean" },
       { key: "Foxit_PDF", label: "Foxit PDF Editor Integration", type: "boolean" },
+      { key: "reporting_tool", label: "Install iManage Reporting Tool", type: "boolean" },
     ],
   },
 ];

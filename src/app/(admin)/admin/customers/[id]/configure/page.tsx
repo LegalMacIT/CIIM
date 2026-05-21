@@ -7,6 +7,7 @@ import { adminSaveFormValues } from "@/app/actions/customers";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import SaveConfigButton from "@/app/(customer)/dashboard/SaveConfigButton";
 import Link from "next/link";
 
 export default async function AdminConfigurePage({
@@ -169,13 +170,7 @@ export default async function AdminConfigurePage({
           ))}
 
           <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              className="inline-flex items-center px-6 py-2.5 rounded-md text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
-              style={{ background: "#C55A11" }}
-            >
-              Save Configuration
-            </button>
+            <SaveConfigButton />
           </div>
         </form>
       </div>

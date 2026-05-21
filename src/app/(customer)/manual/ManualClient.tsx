@@ -42,11 +42,12 @@ export default function ManualClient({
   userInitials,
   allValues,
 }: Props) {
-  // Stable ref of initial state used to seed SectionContent checkboxes (never changes)
-  const initialIdsRef = useRef(new Set(initialCompletedIds));
-
   // Live task completion state (drives progress bars)
   const [completedIds, setCompletedIds] = useState(() => new Set(initialCompletedIds));
+
+  // Ref kept in sync with current completedIds — used by SectionContent on remount
+  const completedIdsRef = useRef(new Set(initialCompletedIds));
+  useEffect(() => { completedIdsRef.current = completedIds; }, [completedIds]);
 
   // Manually-completed section keys (for sections with totalTasks === 0)
   const [manuallyCompleted, setManuallyCompleted] = useState<Set<string>>(() => {
@@ -130,16 +131,16 @@ export default function ManualClient({
     });
   }, [completedIds, overallPercent, enabledSections, showAchievement]);
 
-  // ── Task toggle (one-way: can only check, not uncheck) ────────────────────
+  // ── Task toggle (bidirectional) ───────────────────────────────────────────
 
-  const handleCheckTask = useCallback((taskId: string) => {
+  const handleToggleTask = useCallback((taskId: string, checked: boolean) => {
     setCompletedIds((prev) => {
-      if (prev.has(taskId)) return prev; // Already checked — no-op
       const next = new Set(prev);
-      next.add(taskId);
+      if (checked) next.add(taskId);
+      else next.delete(taskId);
       return next;
     });
-    toggleTaskCompletion(taskId, true);
+    toggleTaskCompletion(taskId, checked);
   }, []);
 
   // ── Manual section complete (for sections with no tasks) ──────────────────
@@ -441,8 +442,8 @@ export default function ManualClient({
               {!isCollapsed && (
                 <SectionContent
                   section={section}
-                  initialCompletedIdsRef={initialIdsRef}
-                  onCheck={handleCheckTask}
+                  completedIdsRef={completedIdsRef}
+                  onToggle={handleToggleTask}
                 />
               )}
             </div>
@@ -542,45 +543,40 @@ export default function ManualClient({
 
 // ── Section content ───────────────────────────────────────────────────────────
 // Memoized so it never re-renders when ManualClient state changes.
-// Checkboxes are one-way: once checked they stay checked.
 
 const SectionContent = React.memo(function SectionContent({
   section,
-  initialCompletedIdsRef,
-  onCheck,
+  completedIdsRef,
+  onToggle,
 }: {
   section: ManualSection;
-  initialCompletedIdsRef: React.RefObject<Set<string>>;
-  onCheck: (taskId: string) => void;
+  completedIdsRef: React.RefObject<Set<string>>;
+  onToggle: (taskId: string, checked: boolean) => void;
 }) {
   const divRef = useRef<HTMLDivElement>(null);
 
-  // Set initial checkbox states on mount only
+  // Restore checkbox states on mount (runs on expand after collapse too)
   useEffect(() => {
     const div = divRef.current;
     if (!div) return;
-    const ids = initialCompletedIdsRef.current;
+    const ids = completedIdsRef.current;
     div
       .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-task-id]')
       .forEach((cb) => { cb.checked = ids?.has(cb.dataset.taskId!) ?? false; });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Event delegation — one-way: prevent unchecking
+  // Event delegation — bidirectional toggle
   useEffect(() => {
     const div = divRef.current;
     if (!div) return;
     const handler = (e: Event) => {
       const cb = e.target as HTMLInputElement;
       if (cb.type !== "checkbox" || !cb.dataset.taskId) return;
-      if (!cb.checked) {
-        cb.checked = true; // Revert — checkboxes are one-way
-        return;
-      }
-      onCheck(cb.dataset.taskId);
+      onToggle(cb.dataset.taskId, cb.checked);
     };
     div.addEventListener("change", handler);
     return () => div.removeEventListener("change", handler);
-  }, [onCheck]);
+  }, [onToggle]);
 
   return (
     <div

@@ -158,8 +158,27 @@ export default async function AdminManualPage({
         .callout-info { border-left: 4px solid #1473e6; background: #f0f4fa; border-radius: 0 6px 6px 0; margin: 1rem 0; overflow: hidden; }
         .callout-info-header { background: #1473e6; color: #fff; font-weight: 700; font-size: 0.8125rem; padding: 0.4rem 1rem; }
         .callout-info p { padding: 0.4rem 1rem; margin: 0; }
+        /* ── Word document color classes ── */
+        .wc-c00000 { color: #C00000; }
+        .wc-ff0000 { color: #FF0000; }
+        .wc-e26b0a { color: #E26B0A; }
+        .wc-c55a11 { color: #C55A11; }
+        .wc-ed7d31 { color: #ED7D31; }
+        .wc-ffc000 { color: #FFC000; }
+        .wc-0070c0 { color: #0070C0; }
+        .wc-4472c4 { color: #4472C4; }
+        .wc-00b0f0 { color: #00B0F0; }
+        .wc-17375e { color: #17375E; }
+        .wc-00b050 { color: #00B050; }
+        .wc-70ad47 { color: #70AD47; }
+        .wc-548235 { color: #548235; }
+        .wc-7030a0 { color: #7030A0; }
+        .wc-8b4726 { color: #8B4726; }
+        .wc-595959 { color: #595959; }
+        .wc-404040 { color: #404040; }
         @media print {
           .ciim-section-bar { background: #8585a0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          span[class^="wc-"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           @page { margin: 1in; }
         }
       `}</style>

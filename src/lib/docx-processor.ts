@@ -21,6 +21,7 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Installing and Configuring Litera Compare v11.x": "Litera_Compare",
   "Installing and Integrating Tungsten Power PDF": "Power_PDF",
   "Integrating Foxit PDF Editor": "Foxit_PDF",
+  "Installing iManage Reporting Tool": "reporting_tool",
 };
 
 // ── Color preservation ──────────────────────────────────────────────────────
