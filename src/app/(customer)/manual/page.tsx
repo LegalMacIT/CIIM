@@ -205,7 +205,7 @@ export default async function ManualPage() {
 
         /* ── Typography ─────────────────────────────────────── */
         .ciim-main, .ciim-preamble { font-size: 1rem; line-height: 1.45; color: #2c2c2c; font-family: var(--font-sans), "Source Sans 3", sans-serif; }
-        .ciim-preamble h1, .ciim-section-content h1 { font-size: 2.25rem; font-weight: 300; line-height: 1.2; letter-spacing: -0.01em; margin: 1.75rem 0 0.75rem; color: #8585a0; }
+        .ciim-preamble h1, .ciim-section-content h1 { font-size: 2.25rem; font-weight: 400; line-height: 1.2; letter-spacing: -0.01em; margin: 1.75rem 0 0.75rem; color: #C55A11; }
         .ciim-preamble h2, .ciim-section-content h2 { font-size: 1.5rem; font-weight: 700; line-height: 1.25; margin: 1.5rem 0 0.5rem; color: #1a1a1a; }
         .ciim-preamble h3, .ciim-section-content h3 { font-size: 1.1875rem; font-weight: 600; line-height: 1.3; margin: 1.25rem 0 0.375rem; color: #1a1a1a; }
         .ciim-preamble h4, .ciim-section-content h4 { font-size: 1rem; font-weight: 600; line-height: 1.35; margin: 1rem 0 0.375rem; color: #1a1a1a; }

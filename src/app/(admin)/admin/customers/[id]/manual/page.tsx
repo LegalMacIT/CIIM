@@ -113,7 +113,7 @@ export default async function AdminManualPage({
           border: 1px solid #e5e7eb; border-top: none;
           border-radius: 0 0 6px 6px; padding: 1.25rem 1.5rem; background: #fff;
         }
-        .ciim-section-content h1 { font-size: 2.25rem; font-weight: 300; line-height: 1.2; letter-spacing: -0.01em; margin: 1.75rem 0 0.75rem; color: #8585a0; }
+        .ciim-section-content h1 { font-size: 2.25rem; font-weight: 400; line-height: 1.2; letter-spacing: -0.01em; margin: 1.75rem 0 0.75rem; color: #C55A11; }
         .ciim-section-content h2 { font-size: 1.5rem; font-weight: 700; margin: 1.5rem 0 0.5rem; color: #1a1a1a; }
         .ciim-section-content h3 { font-size: 1.1875rem; font-weight: 600; margin: 1.25rem 0 0.375rem; color: #1a1a1a; }
         .ciim-section-content h4 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.375rem; color: #1a1a1a; }
