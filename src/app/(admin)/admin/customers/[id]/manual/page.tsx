@@ -126,13 +126,16 @@ export default async function AdminManualPage({
         .ciim-section-content td, .ciim-section-content th { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; }
         .ciim-section-content th { background: #f5f5f5; font-weight: 600; text-align: left; }
         /* Layout tables (no header cells) — stack cells as single column */
-        .ciim-section-content table:not(:has(th)) { border: none; width: auto; }
+        .ciim-section-content table:not(:has(th)) { display: block; border: none; width: auto; }
+        .ciim-section-content table:not(:has(th)) tbody { display: block; }
         .ciim-section-content table:not(:has(th)) tr { display: block; }
         .ciim-section-content table:not(:has(th)) td { display: block; border: none; padding: 0.1rem 0; }
         /* Callout boxes are always single-column — flatten any table inside them */
-        .callout-it-box table { border: none; width: 100%; }
-        .callout-it-box table tr { display: block; }
-        .callout-it-box table td, .callout-it-box table th { display: block; border: none; padding: 0.1rem 0; }
+        .callout-it-box table, .callout-info table { display: block; border: none; width: 100%; }
+        .callout-it-box table tbody, .callout-info table tbody { display: block; }
+        .callout-it-box table tr, .callout-info table tr { display: block; }
+        .callout-it-box table td, .callout-it-box table th,
+        .callout-info table td, .callout-info table th { display: block; border: none; padding: 0.1rem 0; }
         .ciim-section-content a { color: #1473e6; text-decoration: none; }
         .ciim-section-content a:hover { text-decoration: underline; }
         .ciim-section-content > h1:first-child,
