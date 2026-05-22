@@ -97,14 +97,6 @@ ENCRYPTION_KEY                   # 32-byte hex: openssl rand -hex 32
 
 See `.env.local.example` for a template.
 
-## Word Document Fix Required Before First Upload
-
-Four merge fields in the current `.docx` have accidental surrounding quotes that prevent correct merging. Fix in Word before uploading:
-- `"cim_url"` → `cim_url`
-- `"final_trans_date"` → `final_trans_date`
-- `"final_trans_hour"` → `final_trans_hour`
-- `"final_timezone"` → `final_timezone`
-
 ## UI & Design Guidelines
 
 ### Typography

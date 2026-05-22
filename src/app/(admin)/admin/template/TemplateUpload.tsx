@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 type Props = {
@@ -31,6 +30,7 @@ export default function TemplateUpload({ currentVersion }: Props) {
       setStatus("success");
       setMessage(`Template v${json.version} uploaded and activated.`);
       if (inputRef.current) inputRef.current.value = "";
+      setTimeout(() => setStatus("idle"), 3000);
     } catch (err) {
       setStatus("error");
       setMessage(String(err));
@@ -56,29 +56,31 @@ export default function TemplateUpload({ currentVersion }: Props) {
           required
           className="text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:text-sm file:bg-white file:cursor-pointer"
         />
-        <Button type="submit" disabled={status === "uploading"}>
-          {status === "uploading" ? "Processing…" : "Upload & Activate"}
-        </Button>
+        <button
+          type="submit"
+          disabled={status === "uploading"}
+          className="inline-flex items-center px-6 py-2.5 rounded-md text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-70"
+          style={{
+            background:
+              status === "uploading" ? "#a3470d" :
+              status === "success"   ? "#16a34a" :
+              "#C55A11",
+          }}
+        >
+          {status === "uploading" ? "Processing…" :
+           status === "success"   ? "✓ Uploaded!" :
+           "Upload & Activate"}
+        </button>
       </form>
 
-      {message && (
-        <p className={`text-sm ${status === "error" ? "text-red-600" : "text-green-700"}`}>
-          {message}
-        </p>
+      {status === "error" && message && (
+        <p className="text-sm text-red-600">{message}</p>
       )}
 
       <div className="mt-2 text-xs text-gray-400 space-y-1">
         <p>• Only .docx files are accepted.</p>
         <p>• The document will be converted to HTML and activated immediately.</p>
         <p>• The original .docx is saved to Supabase Storage for reference.</p>
-        <p>
-          • Fix these 4 merge fields in Word before uploading:{" "}
-          <code className="bg-gray-100 px-1 rounded">&ldquo;cim_url&rdquo;</code>,{" "}
-          <code className="bg-gray-100 px-1 rounded">&ldquo;final_trans_date&rdquo;</code>,{" "}
-          <code className="bg-gray-100 px-1 rounded">&ldquo;final_trans_hour&rdquo;</code>,{" "}
-          <code className="bg-gray-100 px-1 rounded">&ldquo;final_timezone&rdquo;</code>{" "}
-          — the extra quotes around the field names prevent them from merging.
-        </p>
       </div>
     </div>
   );
