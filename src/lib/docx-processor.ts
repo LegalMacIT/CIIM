@@ -280,6 +280,19 @@ function cleanupNestedLists(html: string): string {
   return html.replace(/<ul><li>(<ol>[\s\S]*?<\/ol>)<\/li><\/ul>/g, "$1");
 }
 
+// ── TOC removal ───────────────────────────────────────────────────────────
+
+function stripTOC(html: string): string {
+  // Remove the "Table of Contents" heading (any h1-h4, with optional inline markup)
+  html = html.replace(
+    /<h[1-4][^>]*>(?:\s*<[^>]*>\s*)*\s*Table of Contents\s*(?:\s*<\/[^>]*>\s*)*<\/h[1-4]>/gi,
+    ""
+  );
+  // Remove all TOC entry paragraphs (toc-1, toc-2, toc-3)
+  html = html.replace(/<p class="toc-[123]"[^>]*>[\s\S]*?<\/p>/g, "");
+  return html;
+}
+
 // ── Main export ────────────────────────────────────────────────────────────
 
 export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string> {
@@ -318,6 +331,7 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
   blocks = wrapHelpfulInsights(blocks);
   html = wrapSections(blocks);
   html = cleanupNestedLists(html);
+  html = stripTOC(html);
 
   return html;
 }
