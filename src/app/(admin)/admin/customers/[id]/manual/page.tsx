@@ -149,12 +149,14 @@ export default async function AdminManualPage({
           background: linear-gradient(180deg, #f9f9fb 0%, #ffffff 18%);
         }
         .ciim-cover img { width: calc(100% + 3rem); margin-left: -1.5rem; margin-right: -1.5rem; margin-bottom: 2.25rem; max-width: none; display: block; }
-        .ciim-cover h1 { font-size: 3rem; font-weight: 700; background: linear-gradient(135deg, #1a1a1a 30%, #4a4870 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.03em; line-height: 1.1; margin: 0 0 0.375rem; }
+        .ciim-cover p.cover-title { font-size: 2.5rem; font-weight: 400; color: #1a1a1a; letter-spacing: -0.01em; line-height: 1.2; margin: 0.5rem 0 0.25rem; text-align: center; }
+        .ciim-cover p.cover-title::after { content: ''; display: block; width: 5rem; height: 3px; background: linear-gradient(to right, #8585a0, rgba(133,133,160,0.2)); margin: 0.875rem auto 0; border-radius: 2px; }
         .ciim-cover h2 { font-size: 1.375rem; color: #4b5563; font-weight: 500; margin: 1.625rem 0 0.25rem; font-style: italic; }
-        .ciim-cover h3 { font-size: 0.9rem; color: #374151; font-weight: 700; margin: 0.625rem 0 2.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
         .ciim-cover p { margin: 0.375rem 0; color: #4b5563; font-size: 1rem; }
-        .ciim-cover p:nth-last-of-type(2) { margin-top: 2.5rem; }
-        .ciim-cover p:last-of-type { margin-top: 2rem; font-size: 0.8rem; color: #b0b0c0; font-style: italic; letter-spacing: 0.04em; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; }
+        .ciim-cover > p:nth-child(5) { margin-top: 3rem; }
+        .ciim-cover > p:nth-child(8) { margin-top: 3rem; }
+        .ciim-cover > p:nth-last-child(1), .ciim-cover > p:nth-last-child(2) { font-size: 0.8rem; color: #b0b0c0; font-style: italic; letter-spacing: 0.04em; margin: 0.2rem 0; }
+        .ciim-cover > p:nth-last-child(2) { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; }
         .ciim-preamble { padding: 0 0 2rem; border-bottom: 1px solid #e5e7eb; margin-bottom: 2rem; font-size: 1rem; line-height: 1.45; color: #2c2c2c; }
         .ciim-preamble h2 { color: #374151; font-size: 1.25rem; font-weight: 700; margin: 1.5rem 0 0.5rem; }
         .ciim-preamble h3 { color: #6b7280; font-size: 1rem; font-weight: 600; margin: 1rem 0 0.375rem; }

@@ -140,6 +140,15 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
     if (/^\s*(IT Tasks|Initial Setup Tasks)\s*$/.test(text)) {
       const boxItems: string[] = [];
       i++;
+      // Skip any intermediate "IT Tasks" label paragraph (e.g. from a text-box anchor)
+      // that is not itself a callout item
+      if (
+        i < blocks.length &&
+        !isCalloutItem(blocks[i]) &&
+        /\bIT\s+Tasks\b/.test(headingText(blocks[i]))
+      ) {
+        i++;
+      }
       while (i < blocks.length && isCalloutItem(blocks[i])) {
         boxItems.push(blocks[i++]);
       }
@@ -262,6 +271,15 @@ function wrapSections(blocks: string[]): string {
   return output.join("");
 }
 
+// ── Nested list cleanup ────────────────────────────────────────────────────
+// mammoth sometimes wraps <ol> items in <ul><li>…</li></ul> when Word uses
+// ListParagraph style for numbered content. Unwrap those spurious bullet shells.
+
+function cleanupNestedLists(html: string): string {
+  // <ul><li><ol>…</ol></li></ul>  →  <ol>…</ol>
+  return html.replace(/<ul><li>(<ol>[\s\S]*?<\/ol>)<\/li><\/ul>/g, "$1");
+}
+
 // ── Main export ────────────────────────────────────────────────────────────
 
 export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string> {
@@ -271,6 +289,7 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const options: any = {
     styleMap: [
+      "p[style-name='Title'] => p.cover-title:fresh",
       "p[style-name='Heading 1'] => h1:fresh",
       "p[style-name='Heading 2'] => h2:fresh",
       "p[style-name='Heading 3'] => h3:fresh",
@@ -298,6 +317,7 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
   blocks = wrapITTaskBoxes(blocks);
   blocks = wrapHelpfulInsights(blocks);
   html = wrapSections(blocks);
+  html = cleanupNestedLists(html);
 
   return html;
 }

@@ -3,6 +3,33 @@ import { CREDENTIAL_KEYS } from "./fields";
 // Fields whose values are URLs — rendered as clickable anchor tags
 const URL_KEYS = new Set(["link_teams_channel", "cim_url", "work_url"]);
 
+// Fields stored as YYYY-MM-DD — displayed as "Month D, YYYY"
+const DATE_KEYS = new Set(["final_trans_date", "uat_doc_date", "uat_deadline_date"]);
+
+// Fields stored as HH:MM (24h) — displayed as "H:MM AM/PM"
+const TIME_KEYS = new Set(["final_trans_hour", "final_trans_hour30"]);
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function formatDate(val: string): string {
+  const [y, m, d] = val.split("-").map(Number);
+  if (!y || !m || !d || m < 1 || m > 12) return val;
+  return `${MONTHS[m - 1]} ${d}, ${y}`;
+}
+
+function formatTime(val: string): string {
+  const [hStr, mStr] = val.split(":");
+  const h = parseInt(hStr, 10);
+  const min = parseInt(mStr, 10);
+  if (isNaN(h) || isNaN(min)) return val;
+  const period = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${String(min).padStart(2, "0")} ${period}`;
+}
+
 export interface ManualSection {
   key: string;
   title: string;
@@ -50,6 +77,8 @@ export function mergeTemplate(html: string, values: Record<string, string>): str
     if (URL_KEYS.has(key) && /^https?:\/\//.test(val)) {
       return `<a href="${val}" target="_blank" rel="noopener noreferrer">${val}</a>`;
     }
+    if (DATE_KEYS.has(key)) return formatDate(val);
+    if (TIME_KEYS.has(key)) return formatTime(val);
     return val;
   });
 
@@ -143,12 +172,15 @@ export function splitManual(mergedHtml: string): ManualParts {
   const confRe = /[Pp]roprietary and [Cc]onfidential/;
   const confIdx = rawPreamble.search(confRe);
   if (confIdx >= 0) {
-    // Find the closing tag of the paragraph containing this text
-    const closeP = rawPreamble.indexOf("</p>", confIdx);
-    if (closeP >= 0) {
-      coverHtml = rawPreamble.slice(0, closeP + 4);
-      preambleHtml = rawPreamble.slice(closeP + 4);
+    let endIdx = rawPreamble.indexOf("</p>", confIdx) + 4;
+    // Also pull in the "Do not distribute" paragraph that immediately follows
+    const afterConf = rawPreamble.slice(endIdx).trimStart();
+    if (/^<p[^>]*>[^<]*[Dd]o not distribute/.test(afterConf)) {
+      const nextClose = rawPreamble.indexOf("</p>", endIdx + 1);
+      if (nextClose >= 0) endIdx = nextClose + 4;
     }
+    coverHtml = rawPreamble.slice(0, endIdx);
+    preambleHtml = rawPreamble.slice(endIdx);
   }
 
   return { coverHtml, preambleHtml, sections };
