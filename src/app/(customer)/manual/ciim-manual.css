@@ -1,0 +1,230 @@
+/* ── Layout: sidebar + main ─────────────────────────── */
+.ciim-layout { display: flex; gap: 0; min-height: calc(100vh - 120px); }
+
+/* ── TOC Sidebar ────────────────────────────────────── */
+.ciim-toc { width: 210px; flex-shrink: 0; border-right: 1px solid #e5e7eb; background: #fafafa; position: sticky; top: 52px; height: calc(100vh - 52px); overflow-y: auto; padding: 1.25rem 0 2rem; }
+.ciim-toc-header { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; padding: 0 1rem 0.625rem; margin-bottom: 0.25rem; border-bottom: 1px solid #e5e7eb; }
+.ciim-toc-list { list-style: none; margin: 0; padding: 0.5rem 0 0; }
+.ciim-toc-item { display: flex; align-items: flex-start; gap: 0.375rem; width: 100%; padding: 0.35rem 1rem; text-align: left; background: none; border: none; font-size: 0.8125rem; line-height: 1.35; color: #6b7280; cursor: pointer; transition: color 0.12s, background 0.12s; border-radius: 0; }
+.ciim-toc-item:hover { color: #1a1a1a; background: #f3f4f6; }
+.ciim-toc-item--active { color: #8585a0; font-weight: 600; background: #f0f0f5; }
+.ciim-toc-item--done { color: #16a34a; }
+.ciim-toc-item--active.ciim-toc-item--done { color: #16a34a; background: #f0fdf4; }
+.ciim-toc-check { width: 1rem; flex-shrink: 0; font-size: 0.6875rem; margin-top: 0.1rem; color: #16a34a; }
+.ciim-toc-text { flex: 1; min-width: 0; }
+
+/* ── Main content area ──────────────────────────────── */
+.ciim-main { flex: 1; min-width: 0; padding: 1.75rem 2rem 3rem; max-width: 780px; }
+
+/* ── Right summary panel ──────────────────────────── */
+.ciim-summary-panel { width: 236px; flex-shrink: 0; border-left: 1px solid #e5e7eb; background: #fafafa; position: sticky; top: 52px; height: calc(100vh - 52px); overflow-y: auto; padding-bottom: 2rem; }
+.ciim-summary-header { background: #1a1a1a; color: #fff; padding: 0.625rem 1rem; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; position: sticky; top: 0; z-index: 1; }
+.ciim-summary-section { border-bottom: 1px solid #f3f4f6; padding: 0.625rem 0.875rem; }
+.ciim-summary-section:last-child { border-bottom: none; }
+.ciim-summary-group-title { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #C55A11; margin-bottom: 0.375rem; }
+.ciim-summary-row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.375rem; margin-bottom: 0.2rem; }
+.ciim-summary-key { font-size: 0.75rem; color: #6b7280; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46%; }
+.ciim-summary-val { font-size: 0.75rem; color: #1a1a1a; font-weight: 500; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 54%; }
+.ciim-summary-val--empty { color: #d1d5db; font-style: italic; }
+.ciim-summary-toggle-item { display: flex; align-items: flex-start; gap: 0.375rem; padding: 0.175rem 0; cursor: pointer; width: 100%; }
+.ciim-summary-toggle-cb { width: 0.875rem; height: 0.875rem; accent-color: #C55A11; cursor: pointer; flex-shrink: 0; margin-top: 0.125rem; }
+.ciim-summary-section-on { font-size: 0.75rem; color: #1a1a1a; line-height: 1.35; }
+.ciim-summary-section-off { font-size: 0.75rem; color: #d1d5db; text-decoration: line-through; line-height: 1.35; }
+
+/* ── Typography ─────────────────────────────────────── */
+.ciim-main, .ciim-preamble { font-size: 1rem !important; line-height: 1.45 !important; color: #2c2c2c !important; font-family: var(--font-sans), "Source Sans 3", sans-serif !important; }
+.ciim-preamble h1, .ciim-section-content h1 { font-size: 2.25rem; font-weight: 400; line-height: 1.2; letter-spacing: -0.01em; margin: 1.75rem 0 0.75rem; color: #C55A11; }
+.ciim-preamble h2, .ciim-section-content h2 { font-size: 1.5rem; font-weight: 700; line-height: 1.25; margin: 1.5rem 0 0.5rem; color: #1a1a1a; }
+.ciim-preamble h3, .ciim-section-content h3 { font-size: 1.1875rem; font-weight: 600; line-height: 1.3; margin: 1.25rem 0 0.375rem; color: #1a1a1a; }
+.ciim-preamble h4, .ciim-section-content h4 { font-size: 1rem; font-weight: 600; line-height: 1.35; margin: 1rem 0 0.375rem; color: #1a1a1a; }
+.ciim-section-content p { margin: 0 0 0.625rem; }
+.ciim-section-content ul, .ciim-section-content ol { padding-left: 1.75rem; margin: 0 0 0.625rem; }
+.ciim-section-content li { margin-bottom: 0.3rem; }
+.ciim-section-content ol, .ciim-preamble ol { list-style-type: decimal !important; list-style-position: outside; }
+.ciim-section-content ol ol { list-style-type: lower-alpha !important; }
+.ciim-section-content ol ol ol { list-style-type: lower-roman !important; }
+.ciim-section-content ul, .ciim-preamble ul { list-style-type: disc !important; }
+.ciim-section-content ul ul { list-style-type: circle !important; }
+.ciim-section-content ol[type="a"], .ciim-preamble ol[type="a"] { list-style-type: lower-alpha !important; }
+.ciim-section-content ol[type="A"] { list-style-type: upper-alpha !important; }
+.ciim-section-content ol[type="i"] { list-style-type: lower-roman !important; }
+.ciim-section-content ol[type="I"] { list-style-type: upper-roman !important; }
+.ciim-section-content table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.9375rem; }
+.ciim-section-content td, .ciim-section-content th { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; }
+.ciim-section-content th { background: #f5f5f5; font-weight: 600; text-align: left; }
+.ciim-section-content table:not(:has(th)) { display: block; border: none; width: auto; }
+.ciim-section-content table:not(:has(th)) tbody { display: block; }
+.ciim-section-content table:not(:has(th)) tr { display: block; }
+.ciim-section-content table:not(:has(th)) td { display: block; border: none; padding: 0.1rem 0; }
+.callout-it-box table, .callout-info table { display: block; border: none; width: 100%; }
+.callout-it-box table tbody, .callout-info table tbody { display: block; }
+.callout-it-box table tr, .callout-info table tr { display: block; }
+.callout-it-box table td, .callout-it-box table th, .callout-info table td, .callout-info table th { display: block; border: none; padding: 0.1rem 0; }
+span.copy-contents { color: #C00000 !important; }
+.ciim-section-content a { color: #1473e6; text-decoration: none; }
+.ciim-section-content a:hover { text-decoration: underline; }
+.ciim-missing { background: #fef3c7; color: #92400e; padding: 0 0.25rem; border-radius: 0.2rem; font-style: italic; font-size: 0.875em; }
+.ciim-section-content > h1:first-child, .ciim-section-content > h2:first-child, .ciim-section-content > h3:first-child { margin-top: 0.25rem; }
+
+/* ── Cover page ─────────────────────────────────────── */
+.ciim-cover { border: 1.5px solid #d1d5db; border-top: 6px solid #8585a0; border-radius: 2px 2px 10px 10px; padding: 3rem 4rem 2.75rem; margin-bottom: 2.5rem; text-align: center; background: linear-gradient(180deg, #f9f9fb 0%, #ffffff 18%); }
+.ciim-cover img { width: calc(100% + 3rem) !important; margin-left: -1.5rem !important; margin-right: -1.5rem !important; margin-bottom: 2.25rem !important; max-width: none !important; display: block !important; }
+.ciim-cover p.cover-title { font-size: 2.5rem !important; font-weight: 400 !important; color: #1a1a1a !important; letter-spacing: -0.01em !important; line-height: 1.2 !important; margin: 0.5rem 0 0.25rem !important; text-align: center !important; }
+.ciim-cover p.cover-title::after { content: '' !important; display: block !important; width: 5rem !important; height: 3px !important; background: linear-gradient(to right, #8585a0, rgba(133,133,160,0.2)) !important; margin: 0.875rem auto 0 !important; border-radius: 2px !important; }
+.ciim-cover h2 { font-size: 1.375rem !important; color: #4b5563 !important; font-weight: 500 !important; margin: 1.625rem 0 0.25rem !important; font-style: italic !important; line-height: 1.25 !important; }
+.ciim-cover p { margin: 0.375rem 0 !important; color: #4b5563 !important; font-size: 1rem !important; font-weight: 400 !important; line-height: 1.45 !important; }
+.ciim-cover > p:nth-child(5) { margin-top: 3rem !important; }
+.ciim-cover > p:nth-child(8) { margin-top: 3rem !important; }
+.ciim-cover > p:nth-last-child(1), .ciim-cover > p:nth-last-child(2) { font-size: 0.8rem !important; color: #b0b0c0 !important; font-style: italic !important; letter-spacing: 0.04em !important; margin: 0.2rem 0 !important; }
+.ciim-cover > p:nth-last-child(2) { margin-top: 2rem !important; padding-top: 1.5rem !important; border-top: 1px solid #e5e7eb !important; }
+.ciim-cover a { color: #8585a0 !important; text-decoration: none !important; }
+.ciim-cover a:hover { text-decoration: underline !important; }
+
+/* ── Preamble ───────────────────────────────────────── */
+.ciim-preamble { padding: 0 0 2rem; border-bottom: 1px solid #e5e7eb; margin-bottom: 2rem; }
+.ciim-preamble h2 { color: #374151; font-size: 1.25rem; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+.ciim-preamble h3 { color: #6b7280; font-size: 1rem; font-weight: 600; margin: 1rem 0 0.375rem; }
+.ciim-preamble p { margin: 0.25rem 0 0.5rem; }
+.ciim-preamble ul, .ciim-preamble ol { margin: 0 0 0.625rem; padding-left: 1.5rem; }
+.ciim-preamble a { color: #1473e6; text-decoration: none; }
+.ciim-preamble a:hover { text-decoration: underline; }
+.ciim-preamble p.toc-1, .ciim-preamble p.toc-2, .ciim-preamble p.toc-3 { display: flex; align-items: baseline; gap: 0.25rem; margin: 0.15rem 0; overflow: hidden; }
+.ciim-preamble p.toc-1 { font-weight: 600; color: #1a1a1a; font-size: 0.9375rem; padding-top: 0.3rem; }
+.ciim-preamble p.toc-2 { padding-left: 1.25rem; color: #374151; font-size: 0.875rem; }
+.ciim-preamble p.toc-3 { padding-left: 2.5rem; color: #6b7280; font-size: 0.8125rem; }
+.ciim-preamble p.toc-1::after, .ciim-preamble p.toc-2::after, .ciim-preamble p.toc-3::after { content: ""; flex: 1; margin: 0 0.25rem 0.2em; border-bottom: 1.5px dotted #d1d5db; min-width: 1rem; }
+.ciim-preamble p.toc-1 a, .ciim-preamble p.toc-2 a, .ciim-preamble p.toc-3 a { color: inherit; text-decoration: none; white-space: nowrap; }
+.ciim-preamble p.toc-1 a:hover, .ciim-preamble p.toc-2 a:hover, .ciim-preamble p.toc-3 a:hover { text-decoration: underline; }
+
+/* ── Checkboxes ─────────────────────────────────────── */
+.ciim-section-content p.task-checkbox { display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.4rem; }
+.ciim-section-content p.task-checkbox input[type="checkbox"] { margin-top: 0.2rem; flex-shrink: 0; width: 1rem; height: 1rem; cursor: pointer; accent-color: #C55A11; }
+/* Callout boxes: block layout — overrides the flex rule above (same specificity, later position wins) */
+.callout-it-box p.task-checkbox, .callout-it-box p.callout-it { display: block; }
+.callout-it-box p.task-checkbox input[type="checkbox"], .callout-it-box p.callout-it input[type="checkbox"] { width: 1rem; height: 1rem; cursor: pointer; accent-color: #C55A11; vertical-align: middle; margin-right: 0.35rem; }
+.ciim-section-content p.task-checkbox-indent, .callout-it-box p.task-checkbox-indent { padding-left: 2.25rem; font-size: 0.9375rem; color: #555; margin-bottom: 0.3rem; }
+.ciim-section-content p.code-line { font-family: var(--font-mono), monospace; font-size: 0.875rem; background: #f5f5f5; padding: 0.1rem 0.4rem; border-radius: 3px; }
+
+/* ── Orange IT Task callout ─────────────────────────── */
+.callout-it-box { border-left: 4px solid #C55A11; background: #fff7f0; border-radius: 0 6px 6px 0; margin: 1rem 0; overflow: hidden; }
+.callout-it-header { background: #C55A11; color: #fff; font-weight: 700; font-size: 0.8125rem; letter-spacing: 0.02em; padding: 0.4rem 1rem; }
+.callout-it-box > p, .callout-it-box p { padding: 0.2rem 1rem; margin: 0; }
+.callout-it-box ul, .callout-it-box ol { padding: 0.2rem 1rem 0.2rem 2.5rem; margin: 0; }
+
+/* ── Blue Helpful Insights callout ──────────────────── */
+.callout-info { border-left: 4px solid #1473e6; background: #f0f4fa; border-radius: 0 6px 6px 0; margin: 1rem 0; overflow: hidden; }
+.callout-info-header { background: #1473e6; color: #fff; font-weight: 700; font-size: 0.8125rem; letter-spacing: 0.02em; padding: 0.4rem 1rem; }
+.callout-info p { padding: 0.4rem 1rem; margin: 0; }
+.callout-info ul, .callout-info ol { padding: 0.25rem 1rem 0.25rem 2.5rem; margin: 0; }
+
+/* ── Gamification ───────────────────────────────────── */
+.ciim-xp-badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; color: #fff; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; transition: background 0.5s ease; flex-shrink: 0; }
+.ciim-achievement { position: fixed; top: 3.75rem; right: 1.5rem; z-index: 200; background: #1a1a1a; color: #fff; padding: 0.7rem 1.25rem; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.22); animation: ciim-toast-in 0.3s ease; max-width: 320px; }
+@keyframes ciim-toast-in { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.ciim-overall-progress { display: flex; align-items: center; gap: 0.875rem; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; }
+.ciim-overall-progress-track { flex: 1; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+.ciim-overall-progress-fill { height: 100%; background: #C55A11; border-radius: 4px; transition: width 0.35s ease; }
+.ciim-overall-progress-label { font-size: 0.8125rem; color: #6b7280; white-space: nowrap; }
+
+/* ── Comments panel ─────────────────────────────────── */
+.ciim-comments-panel { border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1.25rem; overflow: hidden; }
+.ciim-comments-toggle { width: 100%; display: flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1rem; background: #f9fafb; border: none; cursor: pointer; font-size: 0.875rem; font-weight: 600; color: #374151; text-align: left; }
+.ciim-comments-toggle:hover { background: #f3f4f6; }
+.ciim-comments-grid-wrapper { padding: 0.625rem 1rem; overflow-x: auto; }
+.ciim-comments-grid { display: grid; grid-template-columns: 2fr 0.4fr 0.7fr 3fr 0.3fr; gap: 0.2rem 0.625rem; font-size: 0.875rem; align-items: start; }
+.ciim-comments-col-head { font-weight: 600; color: #6b7280; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 0.375rem; border-bottom: 1px solid #e5e7eb; }
+.ciim-comments-cell { padding: 0.3rem 0; border-bottom: 1px solid #f3f4f6; color: #374151; font-size: 0.875rem; }
+.ciim-comment-initials { font-weight: 600; color: #C55A11; }
+.ciim-comment-date { color: #9ca3af; font-size: 0.8125rem; }
+.ciim-comment-delete { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 1rem; padding: 0 0.25rem; }
+.ciim-comment-delete:hover { color: #ef4444; }
+
+/* ── Section ────────────────────────────────────────── */
+.ciim-section { margin: 1.25rem 0; }
+.ciim-section-bar { display: flex; align-items: center; gap: 0.625rem; background: #8585a0; color: #fff; padding: 0.55rem 0.875rem; border-radius: 6px 6px 0 0; user-select: none; }
+.ciim-section-bar--done { background: #166534; }
+.ciim-collapse-btn { background: none; border: none; color: rgba(255,255,255,0.9); cursor: pointer; font-size: 0.65rem; padding: 0; width: 1.1rem; flex-shrink: 0; }
+.ciim-section-bar-title { flex: 1; display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
+.ciim-section-name { font-size: 1rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.01em; }
+.ciim-section-done-badge { font-size: 0.6875rem; font-weight: 700; background: #16a34a; color: #fff; padding: 0.1rem 0.5rem; border-radius: 9999px; flex-shrink: 0; }
+.ciim-section-bar-right { display: flex; align-items: center; gap: 0.625rem; flex-shrink: 0; }
+.ciim-section-meter { display: flex; align-items: center; gap: 0.375rem; }
+.ciim-section-meter-track { width: 72px; height: 5px; background: rgba(255,255,255,0.3); border-radius: 3px; overflow: hidden; }
+.ciim-section-meter-fill { height: 100%; background: #fde68a; border-radius: 3px; transition: width 0.3s ease; }
+.ciim-section-meter-label { font-size: 0.6875rem; color: rgba(255,255,255,0.9); white-space: nowrap; }
+.ciim-manual-done-btn { display: flex; align-items: center; padding: 0.2rem 0.625rem; background: rgba(255,255,255,0.2); border: 1.5px solid rgba(255,255,255,0.5); border-radius: 9999px; cursor: pointer; color: #fff; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; transition: background 0.15s; white-space: nowrap; }
+.ciim-manual-done-btn:hover { background: rgba(255,255,255,0.35); }
+.ciim-manual-done-btn.is-done { background: rgba(255,255,255,0.25); }
+.ciim-comment-btn, .ciim-print-btn { display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.35); border-radius: 5px; cursor: pointer; color: #fff; width: 1.75rem; height: 1.75rem; padding: 0; transition: background 0.15s, border-color 0.15s; }
+.ciim-comment-btn:hover { background: rgba(255,255,255,0.3); border-color: #fff; }
+.ciim-comment-btn.has-comments { background: #f59e0b; border-color: #f59e0b; }
+.ciim-comment-btn sup { font-size: 0.55rem; margin-left: 1px; }
+.ciim-print-btn:hover { background: #1473e6; border-color: #1473e6; }
+.ciim-section-content { border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 6px 6px; padding: 1.25rem 1.5rem; background: #fff; }
+
+/* ── Comment modal ──────────────────────────────────── */
+.ciim-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.ciim-modal { background: #fff; border-radius: 10px; padding: 1.625rem; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.ciim-modal-title { font-size: 1.0625rem; font-weight: 700; color: #1a1a1a; margin: 0 0 0.2rem; }
+.ciim-modal-section-name { font-size: 0.875rem; color: #6b7280; margin: 0 0 0.875rem; }
+.ciim-modal-textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.9375rem; font-family: inherit; resize: vertical; outline: none; box-sizing: border-box; }
+.ciim-modal-textarea:focus { border-color: #C55A11; box-shadow: 0 0 0 3px rgba(197,90,17,0.12); }
+.ciim-modal-actions { display: flex; gap: 0.625rem; margin-top: 0.875rem; }
+.ciim-modal-save { background: #C55A11; color: #fff; border: none; border-radius: 6px; padding: 0.45rem 1.125rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.ciim-modal-save:hover:not(:disabled) { background: #a3470d; }
+.ciim-modal-save:disabled { opacity: 0.5; cursor: not-allowed; }
+.ciim-modal-cancel { background: none; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.45rem 1.125rem; font-size: 0.9375rem; cursor: pointer; color: #374151; }
+.ciim-modal-cancel:hover { background: #f9fafb; }
+
+/* ── Copy-to-clipboard button ───────────────────────── */
+.ciim-copy-btn { display: inline-flex; align-items: center; justify-content: center; margin-left: 5px; padding: 2px 5px; border: 1px solid #93c5fd; border-radius: 4px; background: #eff6ff; color: #2563eb; cursor: pointer; vertical-align: middle; line-height: 1; transition: border-color 0.15s, background 0.15s, box-shadow 0.15s; }
+.ciim-copy-btn:hover { background: #dbeafe; border-color: #3b82f6; box-shadow: 0 1px 3px rgba(59,130,246,0.25); }
+.ciim-copy-btn.copied { border-color: #16a34a; background: #dcfce7; }
+.ciim-copy-btn.copied .ciim-icon-clip { display: none; }
+.ciim-copy-btn.copied .ciim-icon-check { display: inline-block !important; }
+
+/* ── "Important" note highlight ─────────────────────── */
+.ciim-section-content p.note-important, .ciim-preamble p.note-important { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 4px 4px 0; padding: 0.5rem 0.75rem 0.5rem 2.375rem; margin: 0.5rem 0 0.75rem; position: relative; line-height: 1.5; }
+.ciim-section-content p.note-important::before, .ciim-preamble p.note-important::before { content: "⚠"; position: absolute; left: 0.625rem; top: 0.5rem; font-size: 0.9rem; color: #d97706; line-height: 1; }
+
+/* ── Word document color classes ─────────────────────── */
+.wc-c00000 { color: #C00000; }
+.wc-ff0000 { color: #FF0000; }
+.wc-e26b0a { color: #E26B0A; }
+.wc-c55a11 { color: #C55A11; }
+.wc-ed7d31 { color: #ED7D31; }
+.wc-ffc000 { color: #FFC000; }
+.wc-0070c0 { color: #0070C0; }
+.wc-4472c4 { color: #4472C4; }
+.wc-00b0f0 { color: #00B0F0; }
+.wc-17375e { color: #17375E; }
+.wc-00b050 { color: #00B050; }
+.wc-70ad47 { color: #70AD47; }
+.wc-548235 { color: #548235; }
+.wc-7030a0 { color: #7030A0; }
+.wc-8b4726 { color: #8B4726; }
+.wc-595959 { color: #595959; }
+.wc-404040 { color: #404040; }
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 1100px) { .ciim-summary-panel { display: none; } }
+@media (max-width: 768px) { .ciim-toc { display: none; } .ciim-summary-panel { display: none; } .ciim-main { padding: 1.25rem 1rem 2rem; } }
+
+/* ── Print ──────────────────────────────────────────── */
+@media print {
+  .ciim-layout { display: block; }
+  .ciim-toc { display: none; }
+  .ciim-summary-panel { display: none; }
+  .ciim-main { padding: 0; max-width: none; }
+  @page { margin: 1in; }
+  .ciim-section-bar { background: #8585a0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .ciim-section { margin: 0; page-break-inside: avoid; }
+  .ciim-section-content h1 { page-break-before: always; }
+  .ciim-section-content h1:first-of-type { page-break-before: avoid; }
+  .ciim-section-content h2, .ciim-section-content h3 { page-break-after: avoid; }
+  .ciim-section-content table { page-break-inside: avoid; }
+  .ciim-print-hidden { display: none !important; }
+  .ciim-missing { background: none !important; color: inherit !important; }
+  .ciim-copy-btn { display: none !important; }
+  .callout-it-box, .callout-info { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
