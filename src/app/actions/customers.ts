@@ -46,7 +46,7 @@ export async function createCustomer(_prev: ActionState, formData: FormData): Pr
     .select("id")
     .single();
 
-  if (insertError || !newCustomer) return { error: insertError?.message ?? "Failed to create customer" };
+  if (insertError || !newCustomer) return { error: insertError?.message ?? "Failed to create client" };
 
   if (clerk_user_id) {
     const { error: memberError } = await db(supabase)

@@ -14,7 +14,7 @@ export async function addComment(
   if (!userId) throw new Error("Unauthenticated");
 
   const customerId = await resolveCustomerId(userId);
-  if (!customerId) throw new Error("Customer not found");
+  if (!customerId) throw new Error("Client not found");
 
   const supabase = createServiceClient();
   const { data, error } = await supabase

@@ -9,7 +9,7 @@ import { resolveCustomerId as _resolveCustomerId } from "./_customer";
 
 async function resolveCustomerId(userId: string): Promise<string> {
   const id = await _resolveCustomerId(userId);
-  if (!id) throw new Error("Customer record not found");
+  if (!id) throw new Error("Client record not found");
   return id;
 }
 

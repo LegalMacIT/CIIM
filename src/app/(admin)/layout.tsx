@@ -33,7 +33,7 @@ export default async function AdminLayout({
               href="/admin/customers"
               className="flex items-center px-3 text-sm font-medium text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-900 transition-colors"
             >
-              Customers
+              Clients
             </Link>
             <Link
               href="/admin/template"

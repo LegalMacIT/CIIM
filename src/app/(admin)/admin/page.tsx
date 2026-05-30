@@ -221,7 +221,7 @@ export default async function AdminDashboardPage() {
             {!customers?.length && (
               <tr>
                 <td colSpan={7} style={{ padding: "2rem 1rem", textAlign: "center", color: "#9ca3af", fontSize: "0.875rem" }}>
-                  No customers yet.{" "}
+                  No clients yet.{" "}
                   <Link href="/admin/customers" className="text-orange-700 underline">Add one</Link>.
                 </td>
               </tr>

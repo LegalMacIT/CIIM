@@ -74,11 +74,11 @@ export default async function EditCustomerPage({
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600 mb-4">
-            Deleting this customer will permanently remove all their form values.
+            Deleting this client will permanently remove all their form values.
           </p>
           <form action={deleteWithId}>
             <Button type="submit" variant="destructive" size="sm">
-              Delete Customer
+              Delete Client
             </Button>
           </form>
         </CardContent>

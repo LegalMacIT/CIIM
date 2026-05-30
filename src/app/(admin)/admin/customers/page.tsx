@@ -23,21 +23,21 @@ export default async function AdminCustomersPage() {
   return (
     <div className="max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Manage customer accounts and their members.
+          Manage client accounts and their members.
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            All Customers ({customers?.length ?? 0})
+            All Clients ({customers?.length ?? 0})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {!customers?.length ? (
-            <p className="text-sm text-gray-500">No customers yet.</p>
+            <p className="text-sm text-gray-500">No clients yet.</p>
           ) : (
             <div className="divide-y">
               {customers.map((c) => {
@@ -68,7 +68,7 @@ export default async function AdminCustomersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Add New Customer</CardTitle>
+          <CardTitle className="text-base">Add New Client</CardTitle>
         </CardHeader>
         <CardContent>
           <CreateCustomerForm />

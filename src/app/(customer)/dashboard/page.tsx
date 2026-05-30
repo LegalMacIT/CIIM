@@ -34,7 +34,7 @@ export default async function DashboardPage() {
       <div className="max-w-2xl mx-auto px-6 py-16 text-center">
         <h1 className="text-xl font-semibold text-gray-900 mb-2">Account not configured</h1>
         <p className="text-gray-500 text-sm">
-          Your account hasn&apos;t been linked to a customer record yet. Please contact CARM Consulting.
+          Your account hasn&apos;t been linked to a client record yet. Please contact CARM Consulting.
         </p>
       </div>
     );

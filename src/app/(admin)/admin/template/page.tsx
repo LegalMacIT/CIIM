@@ -23,7 +23,7 @@ export default async function AdminTemplatePage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Manual Template</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Upload a new .docx to update the manual all customers see.
+          Upload a new .docx to update the manual all clients see.
         </p>
       </div>
 

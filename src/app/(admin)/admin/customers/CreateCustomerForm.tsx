@@ -39,7 +39,7 @@ export function CreateCustomerForm() {
         </p>
       </div>
       <Button type="submit" disabled={isPending}>
-        {isPending ? "Creating…" : "Create Customer"}
+        {isPending ? "Creating…" : "Create Client"}
       </Button>
     </form>
   );
