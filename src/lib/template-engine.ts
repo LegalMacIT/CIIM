@@ -48,7 +48,7 @@ export interface ManualParts {
 // Word splits a single styled phrase into multiple adjacent runs (each becomes its own span
 // via mammoth :fresh), so we merge them into one copyable unit with a single button.
 // Called after {{field}} substitution so data-copy always holds the final plain-text value.
-const COPY_BTN_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2v1"></path></svg>`;
+const COPY_BTN_SVG = `<svg class="ciim-icon-clip" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none"><rect x="9" y="9" width="13" height="13" rx="2" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><rect x="2" y="2" width="13" height="13" rx="2" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/></svg><svg class="ciim-icon-check" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none;display:none"><polyline points="20 6 9 17 4 12" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 function decodeHtmlEntities(s: string): string {
   return s
@@ -70,7 +70,9 @@ function injectCopyButtons(html: string): string {
       const plain = decodeHtmlEntities(group).trim();
       if (!plain) return group; // skip purely empty groups
       const escaped = plain.replace(/"/g, "&quot;");
-      return `${group.trimEnd()}<button class="ciim-copy-btn" type="button" data-copy="${escaped}" title="Copy to clipboard">${COPY_BTN_SVG}</button>`;
+      // Inline style guarantees red regardless of CSS cascade
+      const colored = group.replace(/<span class="copy-contents">/g, '<span class="copy-contents" style="color:#C00000">');
+      return `${colored.trimEnd()}<button class="ciim-copy-btn" type="button" data-copy="${escaped}" title="Copy to clipboard">${COPY_BTN_SVG}</button>`;
     }
   );
 }

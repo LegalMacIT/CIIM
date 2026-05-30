@@ -129,6 +129,19 @@ function isCalloutItem(block: string): boolean {
   );
 }
 
+// Extract all cell content from a table block, discarding the table structure.
+// Prevents Word layout-tables from creating visual columns inside callout boxes.
+function flattenTableBlock(tableHtml: string): string {
+  const parts: string[] = [];
+  const cellRe = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = cellRe.exec(tableHtml)) !== null) {
+    const content = m[1].trim();
+    if (content) parts.push(content);
+  }
+  return parts.join("\n");
+}
+
 function wrapITTaskBoxes(blocks: string[]): string[] {
   const output: string[] = [];
   let i = 0;
@@ -150,7 +163,8 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
         i++;
       }
       while (i < blocks.length && isCalloutItem(blocks[i])) {
-        boxItems.push(blocks[i++]);
+        const b = blocks[i++];
+        boxItems.push(b.startsWith("<table") ? flattenTableBlock(b) : b);
       }
       if (boxItems.length > 0) {
         output.push(
@@ -164,10 +178,11 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
     }
 
     if (block.includes('class="callout-it"')) {
-      const boxItems: string[] = [block];
+      const boxItems: string[] = [block.startsWith("<table") ? flattenTableBlock(block) : block];
       i++;
       while (i < blocks.length && isCalloutItem(blocks[i])) {
-        boxItems.push(blocks[i++]);
+        const b = blocks[i++];
+        boxItems.push(b.startsWith("<table") ? flattenTableBlock(b) : b);
       }
       output.push(
         `<div class="callout-it-box">` +
@@ -200,8 +215,8 @@ function wrapHelpfulInsights(blocks: string[]): string[] {
       i++;
       while (i < blocks.length) {
         const b = blocks[i];
-        if (b.match(/^<(?:p|ul|ol)[> ]/)) {
-          content.push(b);
+        if (b.match(/^<(?:p|ul|ol|table)[> ]/)) {
+          content.push(b.startsWith("<table") ? flattenTableBlock(b) : b);
           i++;
         } else {
           break;

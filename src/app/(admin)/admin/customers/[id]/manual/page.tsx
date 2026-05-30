@@ -168,9 +168,24 @@ export default async function AdminManualPage({
         .callout-it-box { border-left: 4px solid #C55A11; background: #fff7f0; border-radius: 0 6px 6px 0; margin: 1rem 0; overflow: hidden; }
         .callout-it-header { background: #C55A11; color: #fff; font-weight: 700; font-size: 0.8125rem; letter-spacing: 0.02em; padding: 0.4rem 1rem; }
         .callout-it-box > p, .callout-it-box p { padding: 0.2rem 1rem; margin: 0; }
+        .callout-it-box ul, .callout-it-box ol { padding: 0.2rem 1rem 0.2rem 2.5rem; margin: 0; }
         .callout-info { border-left: 4px solid #1473e6; background: #f0f4fa; border-radius: 0 6px 6px 0; margin: 1rem 0; overflow: hidden; }
         .callout-info-header { background: #1473e6; color: #fff; font-weight: 700; font-size: 0.8125rem; padding: 0.4rem 1rem; }
         .callout-info p { padding: 0.4rem 1rem; margin: 0; }
+        .callout-info ul, .callout-info ol { padding: 0.25rem 1rem 0.25rem 2.5rem; margin: 0; }
+        span.copy-contents { color: #C00000 !important; }
+        .ciim-copy-btn {
+          display: inline-flex; align-items: center; justify-content: center;
+          margin-left: 5px; padding: 2px 5px;
+          border: 1px solid #93c5fd; border-radius: 4px;
+          background: #eff6ff; cursor: pointer; vertical-align: middle; line-height: 1;
+          transition: border-color 0.15s, background 0.15s;
+        }
+        .ciim-copy-btn:hover { background: #dbeafe; border-color: #3b82f6; }
+        .ciim-copy-btn.copied { border-color: #16a34a; background: #dcfce7; }
+        .ciim-copy-btn .ciim-icon-check { display: none; }
+        .ciim-copy-btn.copied .ciim-icon-clip { display: none; }
+        .ciim-copy-btn.copied .ciim-icon-check { display: inline-block !important; }
         /* ── Word document color classes ── */
         .wc-c00000 { color: #C00000; }
         .wc-ff0000 { color: #FF0000; }
@@ -195,6 +210,25 @@ export default async function AdminManualPage({
           @page { margin: 1in; }
         }
       `}</style>
+      <script dangerouslySetInnerHTML={{ __html: `
+        document.addEventListener('click', function(e) {
+          var btn = e.target.closest('.ciim-copy-btn');
+          if (!btn) return;
+          e.preventDefault();
+          var text = btn.dataset.copy || '';
+          btn.classList.add('copied');
+          setTimeout(function() { btn.classList.remove('copied'); }, 1500);
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function() {});
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = text; ta.style.cssText = 'position:fixed;top:-9999px';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } catch(x) {}
+            document.body.removeChild(ta);
+          }
+        }, true);
+      `}} />
     </>
   );
 }

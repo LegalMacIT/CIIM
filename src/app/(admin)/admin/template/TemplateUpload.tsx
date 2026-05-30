@@ -10,6 +10,7 @@ type Props = {
 export default function TemplateUpload({ currentVersion }: Props) {
   const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [activeVersion, setActiveVersion] = useState<number | null>(currentVersion);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
@@ -29,6 +30,7 @@ export default function TemplateUpload({ currentVersion }: Props) {
       if (!res.ok) throw new Error(json.error ?? "Upload failed");
       setStatus("success");
       setMessage(`Template v${json.version} uploaded and activated.`);
+      setActiveVersion(json.version);
       if (inputRef.current) inputRef.current.value = "";
       setTimeout(() => setStatus("idle"), 3000);
     } catch (err) {
@@ -41,8 +43,8 @@ export default function TemplateUpload({ currentVersion }: Props) {
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <span className="text-sm text-gray-600">Current active template:</span>
-        {currentVersion ? (
-          <Badge variant="secondary">v{currentVersion}</Badge>
+        {activeVersion ? (
+          <Badge variant="secondary">v{activeVersion}</Badge>
         ) : (
           <Badge variant="outline">None uploaded</Badge>
         )}

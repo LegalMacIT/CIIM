@@ -165,14 +165,32 @@ export default function ManualClient({
     const handler = (e: MouseEvent) => {
       const btn = (e.target as Element).closest(".ciim-copy-btn") as HTMLButtonElement | null;
       if (!btn) return;
+      e.preventDefault(); // prevent parent <a> from navigating
       const text = btn.dataset.copy ?? "";
-      navigator.clipboard.writeText(text).then(() => {
-        btn.classList.add("copied");
-        setTimeout(() => btn.classList.remove("copied"), 1500);
-      }).catch(() => {});
+
+      // Optimistic feedback — show immediately regardless of clipboard outcome
+      btn.classList.add("copied");
+      setTimeout(() => btn.classList.remove("copied"), 1500);
+
+      const fallback = () => {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); } catch { /* ignore */ }
+        document.body.removeChild(ta);
+      };
+
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).catch(fallback);
+      } else {
+        fallback();
+      }
     };
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
+    // Capture phase: fires before parent <a> elements see the click
+    document.addEventListener("click", handler, true);
+    return () => document.removeEventListener("click", handler, true);
   }, []);
 
   // ── Scroll-spy TOC ────────────────────────────────────────────────────────
@@ -353,7 +371,11 @@ export default function ManualClient({
 
         {/* ── Cover page (bordered card) ── */}
         {coverHtml && (
-          <div className="ciim-cover" dangerouslySetInnerHTML={{ __html: coverHtml }} />
+          <div
+            className="ciim-cover"
+            style={{ lineHeight: 1.45, fontSize: "1rem", fontFamily: 'var(--font-sans), "Source Sans 3", sans-serif', color: "#2c2c2c" }}
+            dangerouslySetInnerHTML={{ __html: coverHtml }}
+          />
         )}
 
         {/* ── Preamble (TOC, Important Links, etc.) ── */}

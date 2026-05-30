@@ -3,7 +3,20 @@
     "allow": [
       "Bash(python3 *)",
       "Bash(node *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git push *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npx tsx *)",
+      "Bash(mkdir -p /tmp/ciim_docx)",
+      "Bash(cp \"/Users/hectorcruz/Library/CloudStorage/OneDrive-LegalMacITLLC/_iManage Consulting/_Claude AI/CIIM_v1.docx\" /tmp/ciim_docx/CIIM_v1.docx)",
+      "Read(//tmp/**)",
+      "Bash(unzip -o CIIM_v1.docx -d extracted)",
+      "Bash(git -C /Users/hectorcruz/Projects/CIIM status)",
+      "Bash(git -C /Users/hectorcruz/Projects/CIIM diff)",
+      "Bash(git *)",
+      "Bash(gh repo *)",
+      "Bash(pip install *)"
     ]
   }
 }
