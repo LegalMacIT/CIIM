@@ -27,16 +27,15 @@ export function CreateCustomerForm() {
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="clerk_user_id">Clerk User ID</Label>
+        <Label htmlFor="clerk_user_id">Clerk User ID <span className="text-gray-400 font-normal">(optional — add after client registers)</span></Label>
         <Input
           id="clerk_user_id"
           name="clerk_user_id"
-          required
           placeholder="user_2abc..."
           className="font-mono text-sm"
         />
         <p className="text-xs text-gray-500">
-          Found in the Clerk dashboard under the customer&apos;s user record.
+          Found in the Clerk dashboard under the client&apos;s user record. Can be added later.
         </p>
       </div>
       <Button type="submit" disabled={isPending}>

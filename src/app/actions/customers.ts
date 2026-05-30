@@ -36,8 +36,8 @@ export async function createCustomer(_prev: ActionState, formData: FormData): Pr
   const clerk_user_id = String(formData.get("clerk_user_id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim().toLowerCase().replace(/\s+/g, "-");
 
-  if (!company_name || !clerk_user_id || !slug) {
-    return { error: "All fields are required" };
+  if (!company_name || !slug) {
+    return { error: "Company name and slug are required" };
   }
 
   const { data: newCustomer, error: insertError } = await db(supabase)
@@ -48,13 +48,15 @@ export async function createCustomer(_prev: ActionState, formData: FormData): Pr
 
   if (insertError || !newCustomer) return { error: insertError?.message ?? "Failed to create customer" };
 
-  const { error: memberError } = await db(supabase)
-    .from("customer_members")
-    .insert({ customer_id: newCustomer.id, clerk_user_id });
+  if (clerk_user_id) {
+    const { error: memberError } = await db(supabase)
+      .from("customer_members")
+      .insert({ customer_id: newCustomer.id, clerk_user_id });
 
-  if (memberError) {
-    await supabase.from("customers").delete().eq("id", newCustomer.id);
-    return { error: memberError.message };
+    if (memberError) {
+      await supabase.from("customers").delete().eq("id", newCustomer.id);
+      return { error: memberError.message };
+    }
   }
 
   redirect("/admin/customers");
