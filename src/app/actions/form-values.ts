@@ -5,17 +5,12 @@ import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase";
 import { encrypt, isCredentialField } from "@/lib/encryption";
 import { BOOLEAN_KEYS } from "@/lib/fields";
+import { resolveCustomerId as _resolveCustomerId } from "./_customer";
 
 async function resolveCustomerId(userId: string): Promise<string> {
-  const supabase = createServiceClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
-    .from("customer_members")
-    .select("customer_id")
-    .eq("clerk_user_id", userId)
-    .single();
-  if (error || !data?.customer_id) throw new Error("Customer record not found");
-  return data.customer_id as string;
+  const id = await _resolveCustomerId(userId);
+  if (!id) throw new Error("Customer record not found");
+  return id;
 }
 
 export async function saveFormValues(formData: FormData) {

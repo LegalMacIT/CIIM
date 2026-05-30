@@ -3,16 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { createServiceClient } from "@/lib/supabase";
 import type { SectionCommentRow } from "@/lib/database.types";
-
-async function getCustomerId(userId: string): Promise<string | null> {
-  const supabase = createServiceClient();
-  const { data } = await supabase
-    .from("customers")
-    .select("id")
-    .eq("clerk_user_id", userId)
-    .single();
-  return data?.id ?? null;
-}
+import { resolveCustomerId } from "./_customer";
 
 export async function addComment(
   sectionKey: string,
@@ -22,7 +13,7 @@ export async function addComment(
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
-  const customerId = await getCustomerId(userId);
+  const customerId = await resolveCustomerId(userId);
   if (!customerId) throw new Error("Customer not found");
 
   const supabase = createServiceClient();
@@ -40,7 +31,7 @@ export async function deleteComment(commentId: string): Promise<void> {
   const { userId } = await auth();
   if (!userId) return;
 
-  const customerId = await getCustomerId(userId);
+  const customerId = await resolveCustomerId(userId);
   if (!customerId) return;
 
   const supabase = createServiceClient();

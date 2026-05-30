@@ -247,7 +247,7 @@ export default async function ManualPage() {
         .ciim-section-content > h2:first-child,
         .ciim-section-content > h3:first-child { margin-top: 0.25rem; }
 
-        /* ── Cover page — book title page ───────────────────── */
+        /* ── Cover page — card container only; text uses document styles ── */
         .ciim-cover {
           border: 1.5px solid #d1d5db;
           border-top: 6px solid #8585a0;
@@ -257,60 +257,10 @@ export default async function ManualPage() {
           text-align: center;
           background: linear-gradient(180deg, #f9f9fb 0%, #ffffff 18%);
           box-shadow: 0 4px 28px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8);
-          position: relative;
-          overflow: hidden;
         }
-        /* Subtle radial glow at top */
-        .ciim-cover::before {
-          content: '';
-          position: absolute; top: 0; left: 0; right: 0;
-          height: 160px;
-          background: radial-gradient(ellipse at 50% -20%, rgba(133,133,160,0.07) 0%, transparent 70%);
-          pointer-events: none;
-        }
-        /* CARM logo — 90% of bordered card width (extends into padding) */
-        .ciim-cover img {
-          width: calc(100% + 3rem);
-          margin-left: -1.5rem; margin-right: -1.5rem; margin-bottom: 2.25rem;
-          max-width: none; display: block; position: relative;
-        }
-        /* Cover title — matches Word Title style: 32pt, dark, no gradient */
-        .ciim-cover p.cover-title {
-          font-size: 2.5rem; font-weight: 400; color: #1a1a1a;
-          letter-spacing: -0.01em; line-height: 1.2;
-          margin: 0.5rem 0 0.25rem; text-align: center;
-        }
-        /* Decorative rule beneath title */
-        .ciim-cover p.cover-title::after {
-          content: '';
-          display: block;
-          width: 5rem; height: 3px;
-          background: linear-gradient(to right, #8585a0, rgba(133,133,160,0.2));
-          margin: 0.875rem auto 0;
-          border-radius: 2px;
-        }
-        /* Subtitle */
-        .ciim-cover h2 {
-          font-size: 1.375rem; color: #4b5563; font-weight: 500;
-          margin: 1.625rem 0 0.25rem; letter-spacing: 0.01em;
-          font-style: italic;
-        }
-        /* General cover text */
-        .ciim-cover p { margin: 0.375rem 0; color: #4b5563; font-size: 1rem; }
-        /* Two blank lines before "Prepared for" (5th child) and "iManage Engineering" (8th child) */
-        .ciim-cover > p:nth-child(5) { margin-top: 3rem; }
-        .ciim-cover > p:nth-child(8) { margin-top: 3rem; }
+        .ciim-cover img { max-width: 100%; height: auto; display: block; margin: 0 auto 2rem; }
         .ciim-cover a { color: #8585a0; text-decoration: none; }
         .ciim-cover a:hover { text-decoration: underline; }
-        /* Proprietary / Do not distribute — last two paragraphs */
-        .ciim-cover > p:nth-last-child(1),
-        .ciim-cover > p:nth-last-child(2) {
-          font-size: 0.8rem; color: #b0b0c0;
-          font-style: italic; letter-spacing: 0.04em; margin: 0.2rem 0;
-        }
-        .ciim-cover > p:nth-last-child(2) {
-          margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;
-        }
 
         /* ── Preamble (TOC, Important Links, etc.) ──────────── */
         .ciim-preamble {
@@ -573,6 +523,18 @@ export default async function ManualPage() {
         }
         .ciim-modal-cancel:hover { background: #f9fafb; }
 
+        /* ── Copy-to-clipboard button ───────────────────────── */
+        .ciim-copy-btn {
+          display: inline-flex; align-items: center; justify-content: center;
+          margin-left: 5px; padding: 2px 5px;
+          border: 1px solid #d1d5db; border-radius: 4px;
+          background: transparent; color: #9ca3af;
+          cursor: pointer; vertical-align: middle; line-height: 1;
+          transition: color 0.15s, border-color 0.15s, background 0.15s;
+        }
+        .ciim-copy-btn:hover { color: #374151; border-color: #9ca3af; background: #f9fafb; }
+        .ciim-copy-btn.copied { color: #16a34a; border-color: #16a34a; background: #f0fdf4; }
+
         /* ── "Important" note highlight ─────────────────────── */
         .ciim-section-content p.note-important,
         .ciim-preamble p.note-important {
@@ -631,6 +593,7 @@ export default async function ManualPage() {
           .ciim-section-content table { page-break-inside: avoid; }
           .ciim-print-hidden { display: none !important; }
           .ciim-missing { background: none !important; color: inherit !important; }
+          .ciim-copy-btn { display: none !important; }
           .callout-it-box, .callout-info { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
 

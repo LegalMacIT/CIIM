@@ -44,6 +44,37 @@ export interface ManualParts {
   sections: ManualSection[];
 }
 
+// Inject a clipboard copy button after each group of consecutive copy-contents spans.
+// Word splits a single styled phrase into multiple adjacent runs (each becomes its own span
+// via mammoth :fresh), so we merge them into one copyable unit with a single button.
+// Called after {{field}} substitution so data-copy always holds the final plain-text value.
+const COPY_BTN_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2v1"></path></svg>`;
+
+function decodeHtmlEntities(s: string): string {
+  return s
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
+function injectCopyButtons(html: string): string {
+  // Match one or more directly adjacent copy-contents spans (optional whitespace between).
+  // The outer non-capturing group with + greedily consumes the whole run of spans.
+  return html.replace(
+    /(?:<span class="copy-contents">[\s\S]*?<\/span>\s*)+/g,
+    (group) => {
+      const plain = decodeHtmlEntities(group).trim();
+      if (!plain) return group; // skip purely empty groups
+      const escaped = plain.replace(/"/g, "&quot;");
+      return `${group.trimEnd()}<button class="ciim-copy-btn" type="button" data-copy="${escaped}" title="Copy to clipboard">${COPY_BTN_SVG}</button>`;
+    }
+  );
+}
+
 // Convert bare https:// URLs in text nodes to anchor tags, skipping content already inside <a>
 function linkifyBareUrls(html: string): string {
   const URL_RE = /(https?:\/\/[^\s<>"')\]]+)/g;
@@ -91,6 +122,7 @@ export function mergeTemplate(html: string, values: Record<string, string>): str
     }
   );
 
+  result = injectCopyButtons(result);
   return linkifyBareUrls(result);
 }
 

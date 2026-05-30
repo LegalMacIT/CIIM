@@ -160,6 +160,21 @@ export default function ManualClient({
     });
   }, []);
 
+  // ── Copy-to-clipboard (delegated — covers cover, preamble, and all sections) ──
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const btn = (e.target as Element).closest(".ciim-copy-btn") as HTMLButtonElement | null;
+      if (!btn) return;
+      const text = btn.dataset.copy ?? "";
+      navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add("copied");
+        setTimeout(() => btn.classList.remove("copied"), 1500);
+      }).catch(() => {});
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, []);
+
   // ── Scroll-spy TOC ────────────────────────────────────────────────────────
 
   useEffect(() => {

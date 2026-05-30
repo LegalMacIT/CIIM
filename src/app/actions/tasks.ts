@@ -2,22 +2,13 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { createServiceClient } from "@/lib/supabase";
-
-async function getCustomerId(userId: string): Promise<string | null> {
-  const supabase = createServiceClient();
-  const { data } = await supabase
-    .from("customers")
-    .select("id")
-    .eq("clerk_user_id", userId)
-    .single();
-  return data?.id ?? null;
-}
+import { resolveCustomerId } from "./_customer";
 
 export async function toggleTaskCompletion(taskId: string, completed: boolean): Promise<void> {
   const { userId } = await auth();
   if (!userId) return;
 
-  const customerId = await getCustomerId(userId);
+  const customerId = await resolveCustomerId(userId);
   if (!customerId) return;
 
   const supabase = createServiceClient();
