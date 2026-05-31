@@ -327,6 +327,7 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
       "p[style-name='First CARM IT task'] => p.callout-it:fresh",
       "p[style-name='ALL_CAPS'] => p.code-line:fresh",
       "r[style-name='Copy_contents'] => span.copy-contents:fresh",
+      "r[style-name='Orange font'] => span.orange-font:fresh",
       "p[style-name='TOC 1'] => p.toc-1:fresh",
       "p[style-name='TOC 2'] => p.toc-2:fresh",
       "p[style-name='TOC 3'] => p.toc-3:fresh",
