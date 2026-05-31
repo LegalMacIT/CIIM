@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { createServiceClient } from "@/lib/supabase";
 import type { SectionCommentRow } from "@/lib/database.types";
 import { resolveCustomerId } from "./_customer";
@@ -8,12 +8,20 @@ import { resolveCustomerId } from "./_customer";
 export async function addComment(
   sectionKey: string,
   commentText: string,
-  userInitials: string
+  userInitials: string,
+  adminCustomerId?: string
 ): Promise<SectionCommentRow> {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
-  const customerId = await resolveCustomerId(userId);
+  let customerId: string | null;
+  if (adminCustomerId) {
+    const user = await currentUser();
+    if ((user?.publicMetadata as { role?: string })?.role !== "admin") throw new Error("Unauthorized");
+    customerId = adminCustomerId;
+  } else {
+    customerId = await resolveCustomerId(userId);
+  }
   if (!customerId) throw new Error("Client not found");
 
   const supabase = createServiceClient();
@@ -27,11 +35,18 @@ export async function addComment(
   return data;
 }
 
-export async function deleteComment(commentId: string): Promise<void> {
+export async function deleteComment(commentId: string, adminCustomerId?: string): Promise<void> {
   const { userId } = await auth();
   if (!userId) return;
 
-  const customerId = await resolveCustomerId(userId);
+  let customerId: string | null;
+  if (adminCustomerId) {
+    const user = await currentUser();
+    if ((user?.publicMetadata as { role?: string })?.role !== "admin") return;
+    customerId = adminCustomerId;
+  } else {
+    customerId = await resolveCustomerId(userId);
+  }
   if (!customerId) return;
 
   const supabase = createServiceClient();

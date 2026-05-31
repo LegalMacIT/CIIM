@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { toggleTaskCompletion } from "@/app/actions/tasks";
 import { addComment, deleteComment } from "@/app/actions/comments";
 import { saveBooleanField } from "@/app/actions/form-values";
+import { pollManualState } from "@/app/actions/poll";
 import type { ManualParts, ManualSection } from "@/lib/template-engine";
 import type { SectionCommentRow } from "@/lib/database.types";
 import { FIELD_GROUPS, CREDENTIAL_KEYS } from "@/lib/fields";
@@ -31,6 +32,8 @@ interface Props {
   initialComments: SectionCommentRow[];
   userInitials: string;
   allValues: Record<string, string>;
+  customerId: string;
+  adminCustomerId?: string;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -41,6 +44,8 @@ export default function ManualClient({
   initialComments,
   userInitials,
   allValues,
+  customerId,
+  adminCustomerId,
 }: Props) {
   // Live task completion state (drives progress bars)
   const [completedIds, setCompletedIds] = useState(() => new Set(initialCompletedIds));
@@ -48,6 +53,25 @@ export default function ManualClient({
   // Ref kept in sync with current completedIds — used by SectionContent on remount
   const completedIdsRef = useRef(new Set(initialCompletedIds));
   useEffect(() => { completedIdsRef.current = completedIds; }, [completedIds]);
+
+  // Poll server for changes from the other party (admin ↔ client sync)
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const state = await pollManualState(customerId);
+        const newIds = new Set(state.completedTaskIds);
+        setCompletedIds(newIds);
+        const newManuallyCompleted = new Set<string>();
+        for (const id of state.completedTaskIds) {
+          if (id.endsWith("-section")) newManuallyCompleted.add(id.slice(0, -8));
+        }
+        setManuallyCompleted(newManuallyCompleted);
+        setComments(state.comments);
+      } catch { /* ignore polling errors */ }
+    };
+    const interval = setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [customerId]);
 
   // Manually-completed section keys (for sections with totalTasks === 0)
   const [manuallyCompleted, setManuallyCompleted] = useState<Set<string>>(() => {
@@ -140,8 +164,8 @@ export default function ManualClient({
       else next.delete(taskId);
       return next;
     });
-    toggleTaskCompletion(taskId, checked);
-  }, []);
+    toggleTaskCompletion(taskId, checked, adminCustomerId);
+  }, [adminCustomerId]);
 
   // ── Manual section complete (for sections with no tasks) ──────────────────
 
@@ -151,14 +175,14 @@ export default function ManualClient({
       const taskId = `${sectionKey}-section`;
       if (next.has(sectionKey)) {
         next.delete(sectionKey);
-        toggleTaskCompletion(taskId, false);
+        toggleTaskCompletion(taskId, false, adminCustomerId);
       } else {
         next.add(sectionKey);
-        toggleTaskCompletion(taskId, true);
+        toggleTaskCompletion(taskId, true, adminCustomerId);
       }
       return next;
     });
-  }, []);
+  }, [adminCustomerId]);
 
   // ── Copy-to-clipboard (delegated — covers cover, preamble, and all sections) ──
   useEffect(() => {
@@ -218,10 +242,10 @@ export default function ManualClient({
       const next = new Set(prev);
       if (wasEnabled) next.delete(sectionKey);
       else next.add(sectionKey);
-      saveBooleanField(sectionKey, !wasEnabled);
+      saveBooleanField(sectionKey, !wasEnabled, adminCustomerId);
       return next;
     });
-  }, []);
+  }, [adminCustomerId]);
 
   // ── Print section ─────────────────────────────────────────────────────────
 
@@ -256,7 +280,7 @@ export default function ManualClient({
     if (!activeCommentSection || !commentDraft.trim()) return;
     setSubmittingComment(true);
     try {
-      const newComment = await addComment(activeCommentSection, commentDraft.trim(), userInitials);
+      const newComment = await addComment(activeCommentSection, commentDraft.trim(), userInitials, adminCustomerId);
       setComments((prev) => [...prev, newComment]);
       setCommentDraft("");
       setActiveCommentSection(null);
@@ -264,12 +288,12 @@ export default function ManualClient({
     } finally {
       setSubmittingComment(false);
     }
-  }, [activeCommentSection, commentDraft, userInitials]);
+  }, [activeCommentSection, commentDraft, userInitials, adminCustomerId]);
 
   const handleDeleteComment = useCallback(async (commentId: string) => {
     setComments((prev) => prev.filter((c) => c.id !== commentId));
-    await deleteComment(commentId);
-  }, []);
+    await deleteComment(commentId, adminCustomerId);
+  }, [adminCustomerId]);
 
   const scrollToSection = useCallback((key: string) => {
     document.getElementById(`section-${key}`)?.scrollIntoView({ behavior: "smooth", block: "start" });

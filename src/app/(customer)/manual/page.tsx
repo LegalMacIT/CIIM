@@ -113,6 +113,7 @@ export default async function ManualPage() {
           initialComments={comments ?? []}
           userInitials={userInitials}
           allValues={values}
+          customerId={customer.id}
         />
       </div>
 

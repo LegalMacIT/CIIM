@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase";
 import { encrypt, isCredentialField } from "@/lib/encryption";
@@ -53,11 +53,18 @@ export async function saveFormValues(formData: FormData) {
 }
 
 /** Toggle a single boolean section field on or off from the manual page. */
-export async function saveBooleanField(fieldKey: string, enabled: boolean) {
+export async function saveBooleanField(fieldKey: string, enabled: boolean, adminCustomerId?: string) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
-  const customerId = await resolveCustomerId(userId);
+  let customerId: string;
+  if (adminCustomerId) {
+    const user = await currentUser();
+    if ((user?.publicMetadata as { role?: string })?.role !== "admin") throw new Error("Unauthorized");
+    customerId = adminCustomerId;
+  } else {
+    customerId = await resolveCustomerId(userId);
+  }
   const supabase = createServiceClient();
 
   const { error } = await supabase

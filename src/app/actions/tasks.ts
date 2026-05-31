@@ -1,14 +1,25 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { createServiceClient } from "@/lib/supabase";
 import { resolveCustomerId } from "./_customer";
 
-export async function toggleTaskCompletion(taskId: string, completed: boolean): Promise<void> {
+export async function toggleTaskCompletion(
+  taskId: string,
+  completed: boolean,
+  adminCustomerId?: string
+): Promise<void> {
   const { userId } = await auth();
   if (!userId) return;
 
-  const customerId = await resolveCustomerId(userId);
+  let customerId: string | null;
+  if (adminCustomerId) {
+    const user = await currentUser();
+    if ((user?.publicMetadata as { role?: string })?.role !== "admin") return;
+    customerId = adminCustomerId;
+  } else {
+    customerId = await resolveCustomerId(userId);
+  }
   if (!customerId) return;
 
   const supabase = createServiceClient();
