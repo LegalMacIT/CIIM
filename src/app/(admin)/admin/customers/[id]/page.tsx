@@ -28,7 +28,7 @@ export default async function EditCustomerPage({
   const deleteWithId = deleteCustomer.bind(null, id);
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="max-w-xl space-y-6 p-8">
       <div className="flex items-center gap-4 flex-wrap">
         <Link href="/admin/customers">
           <Button variant="ghost" size="sm">← Back</Button>

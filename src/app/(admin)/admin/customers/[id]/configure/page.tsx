@@ -58,7 +58,7 @@ export default async function AdminConfigurePage({
   const saveForCustomer = adminSaveFormValues.bind(null, id);
 
   return (
-    <>
+    <div className="p-8">
       <style>{`
         .ciim-dash { font-family: var(--font-sans), "Source Sans 3", sans-serif; }
         .ciim-dash input:focus, .ciim-dash input:focus-visible {
@@ -174,6 +174,6 @@ export default async function AdminConfigurePage({
           </div>
         </form>
       </div>
-    </>
+    </div>
   );
 }

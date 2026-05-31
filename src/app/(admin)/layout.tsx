@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { SignOutButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import "@/app/(customer)/manual/ciim-manual.css";
 
 export default async function AdminLayout({
   children,
@@ -51,7 +52,7 @@ export default async function AdminLayout({
           </SignOutButton>
         </div>
       </header>
-      <main className="flex-1 p-8">{children}</main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 }
