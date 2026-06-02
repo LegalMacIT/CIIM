@@ -64,8 +64,8 @@ export const FIELD_GROUPS: FieldGroup[] = [
     description: "URLs and identifiers for your iManage Cloud tenant.",
     fields: [
       { key: "subdomain", label: "Subdomain", type: "text", placeholder: "acme", hint: "e.g. 'acme' from acme.imanage.work" },
-      { key: "cim_url", label: "Control Center URL", type: "url", placeholder: "https://acme.cloudimanage.com" },
-      { key: "cim_site", label: "Control Center Site Name", type: "text" },
+      { key: "cim_url", label: "Cloud iManage URL", type: "url", placeholder: "https://acme.cloudimanage.com" },
+      { key: "cim_site", label: "Cloud iManage Site Name", type: "text" },
       { key: "work_url", label: "iManage Work URL", type: "url", placeholder: "https://acme.imanage.work" },
       { key: "work_site", label: "iManage Work Site Name", type: "text" },
       { key: "library_name1", label: "Primary Library Name", type: "text" },
