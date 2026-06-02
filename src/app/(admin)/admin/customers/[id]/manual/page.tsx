@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { mergeTemplate, splitManual } from "@/lib/template-engine";
 import { CREDENTIAL_KEYS } from "@/lib/fields";
 import PrintButton from "@/app/(customer)/manual/PrintButton";
+import SendInviteButton from "@/app/(customer)/manual/SendInviteButton";
 import ManualClient from "@/app/(customer)/manual/ManualClient";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,10 @@ export default async function AdminManualPage({
         </div>
         <div className="flex items-center gap-2">
           <p className="text-xs text-gray-400 hidden sm:block">Use Chrome or Edge for best PDF results</p>
+          <SendInviteButton
+            disabled={!values["final_trans_date"] || !values["final_trans_hour"]}
+            adminCustomerId={id}
+          />
           <PrintButton />
         </div>
       </div>

@@ -6,6 +6,7 @@ import { CREDENTIAL_KEYS } from "@/lib/fields";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import PrintButton from "./PrintButton";
+import SendInviteButton from "./SendInviteButton";
 import ManualClient from "./ManualClient";
 
 export default async function ManualPage() {
@@ -101,6 +102,9 @@ export default async function ManualPage() {
           <p className="text-xs text-gray-400 hidden sm:block">
             Use Chrome or Edge for best PDF results
           </p>
+          <SendInviteButton
+            disabled={!values["final_trans_date"] || !values["final_trans_hour"]}
+          />
           <PrintButton />
         </div>
       </div>
