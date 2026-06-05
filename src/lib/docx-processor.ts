@@ -329,6 +329,7 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
       "p[style-name='First CARM IT task'] => p.callout-it:fresh",
       "p[style-name='ALL_CAPS'] => p.code-line:fresh",
       "p[style-name='Fixed_Font'] => p.fixed-font:fresh",
+      "p[style-name='Tight_Lines_Indent'] => p.tight-lines-indent:fresh",
       "r[style-name='Fixed font2'] => span.fixed-font:fresh",
       "r[style-name='Red font'] => span.red-font:fresh",
       "r[style-name='Blue_font'] => span.blue-font:fresh",
