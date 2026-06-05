@@ -6,6 +6,7 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Getting Started": "Getting_Started",
   "Create an Exchange Rule": "Exchange_Rule",
   "Review Checked Out Documents Report": "Checked_Out_Docs",
+  "Review and Prepare for the Desktop Transition Process": "Desktop_Transition",
   "Enabling Auto Discovery on Windows DNS Server": "Auto_Discovery",
   "Upgrade iManage Work Desktop for Windows to v10.10": "Upgrading_imWork",
   "Configure Adobe Acrobat for iManage Integration": "Acrobat",
