@@ -342,8 +342,15 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
 
   const { value: rawHtml } = await mammoth.convertToHtml(input, options);
 
-  // Replace Word merge field markers «field» → {{field}}
-  let html = rawHtml.replace(/«([^»]+)»/g, (_, key: string) => `{{${key.trim()}}}`);
+  // When merge codes are formatted with a character style (e.g. Red font), mammoth
+  // wraps each run in its own span, splitting «, fieldname, and » into separate elements.
+  // Strip the span wrappers from just the guillemets so the merge code regex can match.
+  let html = rawHtml
+    .replace(/<span[^>]*>(«|»)<\/span>/g, "$1")
+    // Field name may still be wrapped in a span — match and unwrap it too
+    .replace(/«(?:<span[^>]*>)?([^»<]+?)(?:<\/span>)?»/g, (_, key: string) => `{{${key.trim()}}}`)
+    // Handle any remaining unstyled «field» markers
+    .replace(/«([^»]+)»/g, (_, key: string) => `{{${key.trim()}}}`);
 
   // Post-processing pipeline
   html = markImportantNotes(html);
