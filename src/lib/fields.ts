@@ -13,7 +13,6 @@ export type FieldDef = {
 };
 
 export const CREDENTIAL_KEYS = new Set([
-  "cloudadmin_email",
   "cloudadmin_password",
   "imanadmin_email",
   "imanadmin_password",
@@ -73,6 +72,7 @@ export const FIELD_GROUPS: FieldGroup[] = [
       { key: "library_name2", label: "Secondary Library Name", type: "text" },
       { key: "tenant_id", label: "Tenant ID", type: "text" },
       { key: "company_id", label: "Company ID", type: "text" },
+      { key: "cloudadmin_email", label: "Cloud Admin Email", type: "email" },
     ],
   },
   {

@@ -1,7 +1,6 @@
 "server only";
 
 const CREDENTIAL_FIELDS = new Set([
-  "cloudadmin_email",
   "cloudadmin_password",
   "imanadmin_email",
   "imanadmin_password",
