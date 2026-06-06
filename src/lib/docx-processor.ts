@@ -1,7 +1,6 @@
-import mammoth from "mammoth";
 import { BOOLEAN_KEYS } from "./fields";
 
-// Heading text → boolean field key
+// Heading text → boolean field key (controls which sections are visible per client)
 const HEADING_TO_FIELD: Record<string, string> = {
   "Getting Started": "Getting_Started",
   "Create an Exchange Rule": "Exchange_Rule",
@@ -25,64 +24,40 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Installing iManage Reporting Tool": "reporting_tool",
 };
 
-// ── Color preservation ──────────────────────────────────────────────────────
-// Maps lower-cased Word hex colors (no #) to CSS class names used in style map below.
-// Covers the standard Office color wheel + common CARM/professional document colors.
-const WORD_COLOR_MAP: Record<string, string> = {
-  "c00000": "wc-c00000", // Dark Red — warnings, important notes
-  "ff0000": "wc-ff0000", // Red
-  "9c0006": "wc-c00000", // Office "Bad" red — alias to same class
-  "e26b0a": "wc-e26b0a", // Dark Orange
-  "c55a11": "wc-c55a11", // CARM brand orange
-  "ed7d31": "wc-ed7d31", // Office orange
-  "ffc000": "wc-ffc000", // Amber/Gold
-  "ff7200": "wc-e26b0a", // Orange alias
-  "0070c0": "wc-0070c0", // Standard blue
-  "4472c4": "wc-4472c4", // Office theme blue
-  "2f75b6": "wc-0070c0", // Blue alias
-  "00b0f0": "wc-00b0f0", // Light blue
-  "17375e": "wc-17375e", // Navy
-  "1f3864": "wc-17375e", // Dark navy alias
-  "00b050": "wc-00b050", // Green
-  "70ad47": "wc-70ad47", // Office light green
-  "548235": "wc-548235", // Dark green
-  "7030a0": "wc-7030a0", // Purple
-  "8b4726": "wc-8b4726", // Dark brown/rust
-  "595959": "wc-595959", // Dark gray
-  "808080": "wc-595959", // Gray alias
-  "404040": "wc-404040", // Charcoal
-};
+// ── Merge-code conversion ──────────────────────────────────────────────────
+// Graph preserves «field» text as-is. Strip any wrapping span/strong tags
+// that Word may have applied to the guillemets before matching.
 
-// Style map entries generated from the color map (appended to mammoth styleMap)
-const COLOR_STYLE_MAP = Array.from(
-  new Set(Object.values(WORD_COLOR_MAP))
-).map((cls) => `r[style-name='${cls}'] => span.${cls}:fresh`);
+function convertMergeCodes(html: string): string {
+  // Unwrap spans/strong around guillemets so the regex can match across them
+  html = html.replace(/<(?:span|strong)[^>]*>(«|»)<\/(?:span|strong)>/g, "$1");
+  // Convert «field» → {{field}}
+  html = html.replace(/«(?:<[^>]+>)?([^»<]+?)(?:<\/[^>]+>)?»/g, (_, key: string) =>
+    `{{${key.trim()}}}`
+  );
+  html = html.replace(/«([^»]+)»/g, (_, key: string) => `{{${key.trim()}}}`);
+  return html;
+}
 
-// Transform: tag runs that have a Word colour with the mapped CSS class name as their styleName.
-// This runs before the styleMap is applied, so the styleMap entries above will match.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mammothTransforms = (mammoth as any).transforms;
+// ── Checkbox normalisation ─────────────────────────────────────────────────
+// Graph may render Word checkboxes as ☐ (U+2610) text characters instead of
+// <input> elements. Convert them so the downstream pipeline works uniformly.
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildColorTransform(): ((doc: any) => any) | undefined {
-  if (!mammothTransforms?.run) return undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return mammothTransforms.run((run: any) => {
-    const col: string | undefined = run.colour; // British spelling in mammoth
-    if (col && col !== "auto" && col.toLowerCase() !== "000000" && !run.styleName) {
-      const key = col.toLowerCase();
-      const cls = WORD_COLOR_MAP[key];
-      if (cls) return { ...run, styleName: cls };
-    }
-    return run;
-  });
+function normalizeCheckboxes(html: string): string {
+  // Replace bare ☐/☑ characters inside block elements with an <input> tag
+  return html.replace(
+    /(<(?:p|li)[^>]*>)((?:<[^>]+>)*)([☐☑])((?:<\/[^>]+>)*)/g,
+    (_, open: string, inner: string, _char: string, close: string) =>
+      `${open}${inner}<input type="checkbox" />${close}`
+  );
 }
 
 // ── Block parsing ──────────────────────────────────────────────────────────
 
 function parseBlocks(html: string): string[] {
   const blocks: string[] = [];
-  const pattern = /(<(?:h[1-4]|p|ul|ol|table)[^>]*>[\s\S]*?<\/(?:h[1-4]|p|ul|ol|table)>)/g;
+  const pattern =
+    /(<(?:h[1-4]|p|ul|ol|table|div)[^>]*>[\s\S]*?<\/(?:h[1-4]|p|ul|ol|table|div)>)/g;
   let last = 0;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(html)) !== null) {
@@ -95,7 +70,7 @@ function parseBlocks(html: string): string[] {
 }
 
 function headingLevel(block: string): number | null {
-  const m = block.match(/^<h([1-4])/);
+  const m = block.match(/^<h([1-4])[\s>]/);
   return m ? parseInt(m[1]) : null;
 }
 
@@ -104,8 +79,6 @@ function headingText(block: string): string {
 }
 
 // ── "Important" note marking ───────────────────────────────────────────────
-// Detects paragraphs that start with "Important" (with or without bold markup)
-// and injects the class "note-important" for CSS icon + highlight treatment.
 
 function markImportantNotes(html: string): string {
   return html.replace(
@@ -120,18 +93,27 @@ function markImportantNotes(html: string): string {
   );
 }
 
-// ── Callout: orange IT Task boxes ──────────────────────────────────────────
+// ── Callout detection ──────────────────────────────────────────────────────
+// Graph HTML uses Word-generated class names we don't control. Detect callout
+// items broadly: blocks that contain a checkbox, are list items, or carry the
+// class names we know from the mammoth pipeline (retained for compatibility if
+// a mammoth-processed template is ever re-uploaded).
 
 function isCalloutItem(block: string): boolean {
-  return (
+  if (
     block.includes('class="callout-it"') ||
     block.includes('class="task-checkbox"') ||
     block.includes('class="task-checkbox-indent"')
-  );
+  )
+    return true;
+  if (block.includes('<input type="checkbox"')) return true;
+  if (block.includes("☐") || block.includes("☑")) return true;
+  // Microsoft list paragraphs (MsoListParagraph*) after an IT Tasks heading
+  if (/class="[^"]*MsoList[^"]*"/.test(block)) return true;
+  return false;
 }
 
-// Extract all cell content from a table block, discarding the table structure.
-// Prevents Word layout-tables from creating visual columns inside callout boxes.
+// Extract all cell content from a table block (Word uses layout-tables).
 function flattenTableBlock(tableHtml: string): string {
   const parts: string[] = [];
   const cellRe = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
@@ -142,6 +124,8 @@ function flattenTableBlock(tableHtml: string): string {
   }
   return parts.join("\n");
 }
+
+// ── IT Tasks callout boxes ─────────────────────────────────────────────────
 
 function wrapITTaskBoxes(blocks: string[]): string[] {
   const output: string[] = [];
@@ -154,8 +138,8 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
     if (/^\s*(IT Tasks|Initial Setup Tasks)\s*$/.test(text)) {
       const boxItems: string[] = [];
       i++;
-      // Skip any intermediate "IT Tasks" label paragraph (e.g. from a text-box anchor)
-      // that is not itself a callout item
+
+      // Skip any duplicate "IT Tasks" label that isn't a callout item itself
       if (
         i < blocks.length &&
         !isCalloutItem(blocks[i]) &&
@@ -163,10 +147,13 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
       ) {
         i++;
       }
+
+      // Collect items until the next heading
       while (i < blocks.length && isCalloutItem(blocks[i])) {
         const b = blocks[i++];
         boxItems.push(b.startsWith("<table") ? flattenTableBlock(b) : b);
       }
+
       if (boxItems.length > 0) {
         output.push(
           `<div class="callout-it-box">` +
@@ -178,8 +165,11 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
       continue;
     }
 
-    if (block.includes('class="callout-it"')) {
-      const boxItems: string[] = [block.startsWith("<table") ? flattenTableBlock(block) : block];
+    // Standalone callout-it paragraphs not preceded by an IT Tasks heading
+    if (isCalloutItem(block) && block.includes('class="callout-it"')) {
+      const boxItems: string[] = [
+        block.startsWith("<table") ? flattenTableBlock(block) : block,
+      ];
       i++;
       while (i < blocks.length && isCalloutItem(blocks[i])) {
         const b = blocks[i++];
@@ -201,7 +191,7 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
   return output;
 }
 
-// ── Callout: blue Helpful Insights boxes ──────────────────────────────────
+// ── Helpful Insights callout boxes ────────────────────────────────────────
 
 function wrapHelpfulInsights(blocks: string[]): string[] {
   const output: string[] = [];
@@ -209,9 +199,8 @@ function wrapHelpfulInsights(blocks: string[]): string[] {
 
   while (i < blocks.length) {
     const block = blocks[i];
-    const text = headingText(block);
 
-    if (text === "Helpful Insights") {
+    if (headingText(block) === "Helpful Insights") {
       const content: string[] = [];
       i++;
       while (i < blocks.length) {
@@ -239,7 +228,7 @@ function wrapHelpfulInsights(blocks: string[]): string[] {
   return output;
 }
 
-// ── Section wrapping + task ID assignment ─────────────────────────────────
+// ── Section wrapping + task ID stamping ───────────────────────────────────
 
 function wrapSections(blocks: string[]): string {
   const output: string[] = [];
@@ -288,79 +277,73 @@ function wrapSections(blocks: string[]): string {
 }
 
 // ── Nested list cleanup ────────────────────────────────────────────────────
-// mammoth sometimes wraps <ol> items in <ul><li>…</li></ul> when Word uses
-// ListParagraph style for numbered content. Unwrap those spurious bullet shells.
 
 function cleanupNestedLists(html: string): string {
-  // <ul><li><ol>…</ol></li></ul>  →  <ol>…</ol>
-  return html.replace(/<ul><li>(<ol>[\s\S]*?<\/ol>)<\/li><\/ul>/g, "$1");
+  return html.replace(
+    /<ul><li>(<ol>[\s\S]*?<\/ol>)<\/li><\/ul>/g,
+    "$1"
+  );
 }
 
 // ── TOC removal ───────────────────────────────────────────────────────────
 
 function stripTOC(html: string): string {
-  // Remove the "Table of Contents" heading (any h1-h4, with optional inline markup)
   html = html.replace(
     /<h[1-4][^>]*>(?:\s*<[^>]*>\s*)*\s*Table of Contents\s*(?:\s*<\/[^>]*>\s*)*<\/h[1-4]>/gi,
     ""
   );
-  // Remove all TOC entry paragraphs (toc-1, toc-2, toc-3)
   html = html.replace(/<p class="toc-[123]"[^>]*>[\s\S]*?<\/p>/g, "");
+  // Graph may wrap the TOC in a nav or div with a Word-generated id
+  html = html.replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "");
   return html;
+}
+
+// ── Microsoft Word style classes → CIIM classes ───────────────────────────
+// Graph renders Word paragraph styles as Word-generated class names (e.g.
+// MsoNormal). Map the ones we care about to our own CIIM CSS classes so the
+// existing ciim-manual.css rules apply.
+//
+// NOTE: The exact class names depend on the Word document styles. This list
+// will be refined after testing the first converted template.
+
+function mapWordClasses(html: string): string {
+  return (
+    html
+      // Cover title
+      .replace(/\bMsoTitle\b/g, "cover-title")
+      // Code / fixed-font paragraphs
+      .replace(/\bMsoCode\b/g, "fixed-font")
+      // TOC entries (strip at source, but map just in case)
+      .replace(/\bMsoToc1\b/g, "toc-1")
+      .replace(/\bMsoToc2\b/g, "toc-2")
+      .replace(/\bMsoToc3\b/g, "toc-3")
+  );
 }
 
 // ── Main export ────────────────────────────────────────────────────────────
 
-export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string> {
-  const input = Buffer.isBuffer(buffer) ? { buffer } : { arrayBuffer: buffer };
-  const colorTransform = buildColorTransform();
+export function processHtml(rawHtml: string): string {
+  let html = rawHtml;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const options: any = {
-    styleMap: [
-      "p[style-name='Title'] => p.cover-title:fresh",
-      "p[style-name='Heading 1'] => h1:fresh",
-      "p[style-name='Heading 2'] => h2:fresh",
-      "p[style-name='Heading 3'] => h3:fresh",
-      "p[style-name='Heading 4'] => h4:fresh",
-      "p[style-name='Hang indent checkbox'] => p.task-checkbox:fresh",
-      "p[style-name='Indent checkbox'] => p.task-checkbox-indent:fresh",
-      "p[style-name='Indent checkbox2'] => p.task-checkbox-indent:fresh",
-      "p[style-name='First CARM IT task'] => p.callout-it:fresh",
-      "p[style-name='ALL_CAPS'] => p.code-line:fresh",
-      "p[style-name='Fixed_Font'] => p.fixed-font:fresh",
-      "p[style-name='Tight_Lines_Indent'] => p.tight-lines-indent:fresh",
-      "r[style-name='Fixed font2'] => span.fixed-font:fresh",
-      "r[style-name='Red font'] => span.red-font:fresh",
-      "r[style-name='Blue_font'] => span.blue-font:fresh",
-      "r[style-name='Copy_contents'] => span.copy-contents:fresh",
-      "r[style-name='Orange font'] => span.orange-font:fresh",
-      "p[style-name='TOC 1'] => p.toc-1:fresh",
-      "p[style-name='TOC 2'] => p.toc-2:fresh",
-      "p[style-name='TOC 3'] => p.toc-3:fresh",
-      ...COLOR_STYLE_MAP,
-    ],
-  };
-  if (colorTransform) options.transformDocument = colorTransform;
+  // 1. Merge codes
+  html = convertMergeCodes(html);
 
-  const { value: rawHtml } = await mammoth.convertToHtml(input, options);
+  // 2. Normalise ☐/☑ checkbox characters → <input type="checkbox">
+  html = normalizeCheckboxes(html);
 
-  // When merge codes are formatted with a character style (e.g. Red font), mammoth
-  // wraps each run in its own span, splitting «, fieldname, and » into separate elements.
-  // Strip the span wrappers from just the guillemets so the merge code regex can match.
-  let html = rawHtml
-    .replace(/<span[^>]*>(«|»)<\/span>/g, "$1")
-    // Field name may still be wrapped in a span — match and unwrap it too
-    .replace(/«(?:<span[^>]*>)?([^»<]+?)(?:<\/span>)?»/g, (_, key: string) => `{{${key.trim()}}}`)
-    // Handle any remaining unstyled «field» markers
-    .replace(/«([^»]+)»/g, (_, key: string) => `{{${key.trim()}}}`);
+  // 3. Map Word class names → CIIM class names
+  html = mapWordClasses(html);
 
-  // Post-processing pipeline
+  // 4. Important-note highlighting
   html = markImportantNotes(html);
+
+  // 5. Block-level pipeline
   let blocks = parseBlocks(html);
   blocks = wrapITTaskBoxes(blocks);
   blocks = wrapHelpfulInsights(blocks);
   html = wrapSections(blocks);
+
+  // 6. Structural cleanup
   html = cleanupNestedLists(html);
   html = stripTOC(html);
 

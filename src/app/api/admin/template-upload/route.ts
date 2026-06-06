@@ -1,7 +1,8 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import { processDocx } from "@/lib/docx-processor";
+import { convertDocxToHtml } from "@/lib/graph-converter";
+import { processHtml } from "@/lib/docx-processor";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,8 +21,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Only .docx files are accepted" }, { status: 400 });
     }
 
-    // Convert to Node.js Buffer immediately — prevents ArrayBuffer from being
-    // detached/consumed by the Supabase storage client before mammoth can use it.
     const nodeBuffer = Buffer.from(await file.arrayBuffer());
     const supabase = createServiceClient();
 
@@ -36,8 +35,9 @@ export async function POST(req: NextRequest) {
     const nextVersion = (latest?.version ?? 0) + 1;
     const storagePath = `templates/v${nextVersion}.docx`;
 
-    // Convert .docx → processed HTML
-    const htmlContent = await processDocx(nodeBuffer);
+    // Convert .docx → HTML via Microsoft Graph, then apply post-processing
+    const rawHtml = await convertDocxToHtml(nodeBuffer);
+    const htmlContent = processHtml(rawHtml);
 
     // Upload original .docx to Supabase Storage
     const { error: uploadError } = await supabase.storage
