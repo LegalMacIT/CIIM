@@ -76,16 +76,6 @@ export const FIELD_GROUPS: FieldGroup[] = [
     ],
   },
   {
-    title: "Credentials",
-    description: "Stored encrypted. Never displayed in the manual. Reserved for future automation.",
-    fields: [
-      { key: "cloudadmin_email", label: "Cloud Admin Email", type: "email" },
-      { key: "cloudadmin_password", label: "Cloud Admin Password", type: "password" },
-      { key: "imanadmin_email", label: "iManage Admin Email", type: "email" },
-      { key: "imanadmin_password", label: "iManage Admin Password", type: "password" },
-    ],
-  },
-  {
     title: "Migration Timeline",
     fields: [
       { key: "final_trans_date", label: "Final Transition Date", type: "date" },
@@ -99,7 +89,7 @@ export const FIELD_GROUPS: FieldGroup[] = [
   {
     title: "Other Details",
     fields: [
-      { key: "link_teams_channel", label: "Microsoft Teams Channel Link", type: "url" },
+      { key: "link_teams_channel", label: "Microsoft SharePoint Link", type: "url" },
       { key: "drive_letter", label: "iManage Drive Letter", type: "text", placeholder: "Z" },
     ],
   },
@@ -139,9 +129,16 @@ export const FIELD_GROUPS: FieldGroup[] = [
 export function computeDerivedDefaults(values: Record<string, string>): Record<string, string> {
   const derived: Record<string, string> = {};
 
+  // cim_url = https://{subdomain}.cloudimanage.com (or https://cloudimanage.com if no subdomain)
+  if (!values["cim_url"] && values["subdomain"] !== undefined) {
+    derived["cim_url"] = values["subdomain"]
+      ? `https://${values["subdomain"]}.cloudimanage.com`
+      : "https://cloudimanage.com";
+  }
+
   // cim_site = cim_url without "https://"
-  if (!values["cim_site"] && values["cim_url"]) {
-    derived["cim_site"] = values["cim_url"].replace(/^https?:\/\//, "");
+  if (!values["cim_site"] && (values["cim_url"] || derived["cim_url"])) {
+    derived["cim_site"] = (values["cim_url"] || derived["cim_url"]).replace(/^https?:\/\//, "");
   }
 
   // work_site = work_url without "https://"

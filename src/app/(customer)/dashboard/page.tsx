@@ -5,10 +5,10 @@ import { FIELD_GROUPS, BOOLEAN_KEYS, CREDENTIAL_KEYS, computeDerivedDefaults } f
 import { saveFormValues } from "@/app/actions/form-values";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import DashboardPrintButton from "./DashboardPrintButton";
 import SaveConfigButton from "./SaveConfigButton";
+import UrlAutoFill from "./UrlAutoFill";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -51,12 +51,6 @@ export default async function DashboardPage() {
       values[row.field_key] = row.field_value ?? "";
     }
   }
-
-  const savedCredentials = new Set(
-    (savedValues ?? [])
-      .filter((r) => CREDENTIAL_KEYS.has(r.field_key) && r.field_value)
-      .map((r) => r.field_key)
-  );
 
   const derivedValues = computeDerivedDefaults(values);
 
@@ -231,45 +225,29 @@ export default async function DashboardPage() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 gap-4">
-                        {group.fields.map((field) => {
-                          const isCredential = CREDENTIAL_KEYS.has(field.key);
-                          const hasSavedCredential = savedCredentials.has(field.key);
-                          return (
-                            <div key={field.key}>
-                              <div className="flex items-center gap-2 mb-1">
-                                <label className="ciim-dash-label" htmlFor={field.key}>
-                                  {field.label}
-                                </label>
-                                {isCredential && (
-                                  <Badge variant="secondary" className="text-xs">Encrypted</Badge>
-                                )}
-                                {isCredential && hasSavedCredential && (
-                                  <Badge variant="outline" className="text-xs text-green-700 border-green-300">
-                                    Saved
-                                  </Badge>
-                                )}
-                              </div>
-                              <Input
-                                id={field.key}
-                                name={field.key}
-                                type={
-                                  field.type === "password" ? "password"
-                                    : field.type === "date" ? "date"
-                                    : field.type === "time" ? "time"
-                                    : field.type === "email" ? "email"
-                                    : field.type === "url" ? "url"
-                                    : "text"
-                                }
-                                placeholder={isCredential && hasSavedCredential ? "••••••••" : (field.placeholder ?? "")}
-                                defaultValue={isCredential ? "" : (values[field.key] || derivedValues[field.key] || "")}
-                                autoComplete={field.type === "password" ? "new-password" : undefined}
-                              />
-                              {field.hint && (
-                                <p className="ciim-dash-hint">{field.hint}</p>
-                              )}
-                            </div>
-                          );
-                        })}
+                        {group.fields.map((field) => (
+                          <div key={field.key}>
+                            <label className="ciim-dash-label" htmlFor={field.key}>
+                              {field.label}
+                            </label>
+                            <Input
+                              id={field.key}
+                              name={field.key}
+                              type={
+                                field.type === "date" ? "date"
+                                  : field.type === "time" ? "time"
+                                  : field.type === "email" ? "email"
+                                  : field.type === "url" ? "url"
+                                  : "text"
+                              }
+                              placeholder={field.placeholder ?? ""}
+                              defaultValue={values[field.key] || derivedValues[field.key] || ""}
+                            />
+                            {field.hint && (
+                              <p className="ciim-dash-hint">{field.hint}</p>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -280,6 +258,7 @@ export default async function DashboardPage() {
                 <SaveConfigButton />
               </div>
             </form>
+            <UrlAutoFill />
           </div>
 
           {/* ── Right: summary panel ── */}
@@ -287,39 +266,25 @@ export default async function DashboardPage() {
             <div className="ciim-dash-summary">
               <div className="ciim-dash-summary-header">Configuration Summary</div>
 
-              {FIELD_GROUPS.filter((g) => g.fields[0]?.type !== "boolean").map((group, gi) => {
-                const textFields = group.fields.filter((f) => !CREDENTIAL_KEYS.has(f.key));
-                const credFields = group.fields.filter((f) => CREDENTIAL_KEYS.has(f.key));
-                return (
-                  <div key={gi} className="ciim-dash-summary-section">
-                    <div className="ciim-dash-summary-group-title">{group.title}</div>
-                    {textFields.map((field) => {
-                      const val = values[field.key];
-                      return (
-                        <div key={field.key} className="ciim-dash-summary-row">
-                          <span className="ciim-dash-summary-key" title={field.label}>{field.label}</span>
-                          <span
-                            className={`ciim-dash-summary-val${val ? "" : " ciim-dash-summary-val--empty"}`}
-                            title={val || "not set"}
-                          >
-                            {val || "—"}
-                          </span>
-                        </div>
-                      );
-                    })}
-                    {credFields.map((field) => (
+              {FIELD_GROUPS.filter((g) => g.fields[0]?.type !== "boolean").map((group, gi) => (
+                <div key={gi} className="ciim-dash-summary-section">
+                  <div className="ciim-dash-summary-group-title">{group.title}</div>
+                  {group.fields.map((field) => {
+                    const val = values[field.key];
+                    return (
                       <div key={field.key} className="ciim-dash-summary-row">
                         <span className="ciim-dash-summary-key" title={field.label}>{field.label}</span>
                         <span
-                          className={`ciim-dash-summary-val${savedCredentials.has(field.key) ? " ciim-dash-summary-val--saved" : " ciim-dash-summary-val--empty"}`}
+                          className={`ciim-dash-summary-val${val ? "" : " ciim-dash-summary-val--empty"}`}
+                          title={val || "not set"}
                         >
-                          {savedCredentials.has(field.key) ? "Saved" : "—"}
+                          {val || "—"}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              ))}
 
               {/* Boolean section toggles */}
               {booleanGroup && (
