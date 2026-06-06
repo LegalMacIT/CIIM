@@ -29,6 +29,35 @@ export default function UrlAutoFill() {
 
     wireUrlToSite("cim_url", "cim_site");
     wireUrlToSite("work_url", "work_site");
+
+    // Transition Start Time → Final Notification Time (-30 min)
+    const hourInput = document.getElementById("final_trans_hour") as HTMLInputElement | null;
+    const hour30Input = document.getElementById("final_trans_hour30") as HTMLInputElement | null;
+    if (hourInput && hour30Input) {
+      hourInput.addEventListener("change", () => {
+        const parts = hourInput.value.split(":").map(Number);
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          const total = parts[0] * 60 + parts[1] - 30;
+          const wrapped = ((total % (24 * 60)) + 24 * 60) % (24 * 60);
+          hour30Input.value =
+            String(Math.floor(wrapped / 60)).padStart(2, "0") + ":" +
+            String(wrapped % 60).padStart(2, "0");
+        }
+      });
+    }
+
+    // Final Transition Date → UAT Deadline Date (−7 days)
+    const transDateInput = document.getElementById("final_trans_date") as HTMLInputElement | null;
+    const uatDateInput = document.getElementById("uat_deadline_date") as HTMLInputElement | null;
+    if (transDateInput && uatDateInput) {
+      transDateInput.addEventListener("change", () => {
+        if (transDateInput.value) {
+          const d = new Date(transDateInput.value + "T12:00:00");
+          d.setDate(d.getDate() - 7);
+          uatDateInput.value = d.toISOString().split("T")[0];
+        }
+      });
+    }
   }, []);
 
   return null;
