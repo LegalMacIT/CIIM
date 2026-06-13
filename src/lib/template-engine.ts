@@ -145,11 +145,19 @@ export function splitManual(mergedHtml: string): ManualParts {
     const m = sectionStartRe.exec(remaining);
     if (!m) {
       if (sections.length === 0) rawPreamble = remaining;
+      // Append any trailing non-section content to the last section so it isn't lost
+      else if (remaining.trim() && sections.length > 0) {
+        sections[sections.length - 1].html += remaining;
+      }
       break;
     }
 
+    const before = remaining.slice(0, m.index);
     if (sections.length === 0 && m.index > 0) {
-      rawPreamble = remaining.slice(0, m.index);
+      rawPreamble = before;
+    } else if (sections.length > 0 && before.trim()) {
+      // Content between two data-section divs (e.g. unmapped headings): attach to previous section
+      sections[sections.length - 1].html += before;
     }
 
     const sectionKey = m[1];

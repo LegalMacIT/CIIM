@@ -12,7 +12,8 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Configure Adobe Acrobat for iManage Integration": "Acrobat",
   "Prepare for iManage Workspace Generation": "Workspace_Gen",
   "Create SAML Applications for iManage Share": "SAML_Share",
-  "Create a SAML SSO application for iManage Work": "SAML_Work",
+  "Create a SAML SSO application for iManage Work on Entra ID": "SAML_Work",
+  "Creating a SAML SSO application for iManage Work 10 on Okta": "saml_okta",
   "Create a SAML SCIM application for iManage Work": "SCIM",
   "Install and Configure iManage Drive": "Drive",
   "Conduct User Acceptance Testing (UAT)": "UAT",
@@ -241,6 +242,19 @@ function wrapHelpfulInsights(blocks: string[]): string[] {
 
 // ── Section wrapping + task ID assignment ─────────────────────────────────
 
+// Exact match first; falls back to stripping {{placeholders}} and parenthetical
+// clauses so headings like "Install and Configure iManage Drive (Network drive {{drive_letter}})"
+// still match the simpler key "Install and Configure iManage Drive".
+function lookupFieldKey(text: string): string | undefined {
+  if (HEADING_TO_FIELD[text]) return HEADING_TO_FIELD[text];
+  const stripped = text
+    .replace(/\{\{[^}]+\}\}/g, "")
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return HEADING_TO_FIELD[stripped];
+}
+
 function wrapSections(blocks: string[]): string {
   const output: string[] = [];
   let i = 0;
@@ -251,7 +265,7 @@ function wrapSections(blocks: string[]): string {
 
     if (level !== null) {
       const text = headingText(block);
-      const fieldKey = HEADING_TO_FIELD[text];
+      const fieldKey = lookupFieldKey(text);
 
       if (fieldKey && BOOLEAN_KEYS.has(fieldKey)) {
         const section: string[] = [block];
