@@ -12,6 +12,7 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Configure Adobe Acrobat for iManage Integration": "Acrobat",
   "Prepare for iManage Workspace Generation": "Workspace_Gen",
   "Create SAML Applications for iManage Share": "SAML_Share",
+  "Creating a SAML SSO application for iManage Share on Okta": "SAML_Share_Okta",
   "Create a SAML SSO application for iManage Work on Entra ID": "SAML_Work",
   "Creating a SAML SSO application for iManage Work 10 on Okta": "saml_okta",
   "Create a SAML SCIM application for iManage Work": "SCIM",
@@ -248,6 +249,7 @@ function wrapHelpfulInsights(blocks: string[]): string[] {
 function lookupFieldKey(text: string): string | undefined {
   if (HEADING_TO_FIELD[text]) return HEADING_TO_FIELD[text];
   const stripped = text
+    .replace(/^[^a-zA-Z0-9]+/, "")  // strip leading non-alpha markers (e.g. asterisk)
     .replace(/\{\{[^}]+\}\}/g, "")
     .replace(/\s*\([^)]*\)\s*/g, " ")
     .replace(/\s+/g, " ")
@@ -275,6 +277,34 @@ function wrapSections(blocks: string[]): string {
         while (i < blocks.length) {
           const nextLevel = headingLevel(blocks[i]);
           if (nextLevel !== null && nextLevel <= level) break;
+
+          // If this inner heading is itself a toggleable sub-section, wrap it independently
+          if (nextLevel !== null) {
+            const subText = headingText(blocks[i]);
+            const subKey = lookupFieldKey(subText);
+            if (subKey && BOOLEAN_KEYS.has(subKey)) {
+              const subSection: string[] = [blocks[i]];
+              i++;
+              let subTaskNum = 0;
+              while (i < blocks.length) {
+                const subLevel = headingLevel(blocks[i]);
+                if (subLevel !== null && subLevel <= nextLevel) break;
+                const stamped = blocks[i].replace(/<input type="checkbox" \/>/g, () => {
+                  subTaskNum++;
+                  return `<input type="checkbox" data-task-id="${subKey}-task-${subTaskNum}" data-section="${subKey}" />`;
+                });
+                subSection.push(stamped);
+                i++;
+              }
+              const cleanSubTitle = subText.replace(/^[^a-zA-Z0-9]+/, "").replace(/"/g, "&quot;");
+              section.push(
+                `<div data-section="${subKey}" data-section-title="${cleanSubTitle}" data-total-tasks="${subTaskNum}">` +
+                  subSection.join("") +
+                  `</div>`
+              );
+              continue;
+            }
+          }
 
           const stamped = blocks[i].replace(/<input type="checkbox" \/>/g, () => {
             taskNum++;
