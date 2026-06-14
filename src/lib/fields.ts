@@ -41,6 +41,7 @@ export const BOOLEAN_KEYS = new Set([
   "File_Transfer",
   "Go_Live",
   "reporting_tool",
+  "Citrix_RDS",
 ]);
 
 export const FIELD_GROUPS: FieldGroup[] = [
@@ -120,6 +121,7 @@ export const FIELD_GROUPS: FieldGroup[] = [
       { key: "Power_PDF", label: "Tungsten Power PDF Integration", type: "boolean" },
       { key: "Foxit_PDF", label: "Foxit PDF Editor Integration", type: "boolean" },
       { key: "reporting_tool", label: "Install iManage Reporting Tool", type: "boolean" },
+      { key: "Citrix_RDS", label: "Best Practices for Citrix/Remote Desktop Services", type: "boolean" },
     ],
   },
 ];

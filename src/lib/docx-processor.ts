@@ -25,6 +25,7 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Installing and Integrating Tungsten Power PDF": "Power_PDF",
   "Integrating Foxit PDF Editor": "Foxit_PDF",
   "Installing iManage Reporting Tool": "reporting_tool",
+  "Best Practices for Citrix/Remote Desktop Services": "Citrix_RDS",
 };
 
 // ── Color preservation ──────────────────────────────────────────────────────
