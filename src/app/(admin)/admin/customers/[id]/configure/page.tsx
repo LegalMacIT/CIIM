@@ -169,8 +169,14 @@ export default async function AdminConfigurePage({
             </div>
           ))}
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end items-center gap-3 pt-2">
             <SaveConfigButton />
+            <Link
+              href={`/admin/customers/${id}/manual`}
+              className="inline-flex items-center px-5 py-2.5 rounded-md text-sm font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              View Manual →
+            </Link>
           </div>
         </form>
       </div>

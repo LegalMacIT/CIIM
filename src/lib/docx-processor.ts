@@ -11,7 +11,7 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Upgrade iManage Work Desktop for Windows to v10.10": "Upgrading_imWork",
   "Configure Adobe Acrobat for iManage Integration": "Acrobat",
   "Prepare for iManage Workspace Generation": "Workspace_Gen",
-  "Create SAML Applications for iManage Share": "SAML_Share",
+  "Create SAML Application for iManage Share for Entra ID": "SAML_Share",
   "Creating a SAML SSO application for iManage Share on Okta": "SAML_Share_Okta",
   "Create a SAML SSO application for iManage Work on Entra ID": "SAML_Work",
   "Creating a SAML SSO application for iManage Work 10 on Okta": "saml_okta",
