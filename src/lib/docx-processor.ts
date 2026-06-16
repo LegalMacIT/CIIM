@@ -24,6 +24,8 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Installing and Configuring Litera Compare v11.16+": "Litera_Compare",
   "Installing and Integrating Tungsten Power PDF": "Power_PDF",
   "Integrating Foxit PDF Editor": "Foxit_PDF",
+  "Approve Request for URL Redirection": "URL_Redirect",
+  "Configure Next Generation Coauthoring on Word for Windows": "CoAuthoring",
   "Installing iManage Reporting Tool": "reporting_tool",
   "Best Practices for Citrix/Remote Desktop Services": "Citrix_RDS",
 };
