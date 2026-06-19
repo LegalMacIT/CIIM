@@ -54,6 +54,17 @@ export default function ManualClient({
   const completedIdsRef = useRef(new Set(initialCompletedIds));
   useEffect(() => { completedIdsRef.current = completedIds; }, [completedIds]);
 
+  // Manually-completed section keys (for sections with totalTasks === 0)
+  const [manuallyCompleted, setManuallyCompleted] = useState<Set<string>>(() => {
+    const s = new Set<string>();
+    for (const id of initialCompletedIds) {
+      if (id.endsWith("-section")) s.add(id.slice(0, -8));
+    }
+    return s;
+  });
+
+  const [comments, setComments] = useState(initialComments);
+
   // Poll server for changes from the other party (admin ↔ client sync)
   useEffect(() => {
     const poll = async () => {
@@ -73,17 +84,7 @@ export default function ManualClient({
     return () => clearInterval(interval);
   }, [customerId]);
 
-  // Manually-completed section keys (for sections with totalTasks === 0)
-  const [manuallyCompleted, setManuallyCompleted] = useState<Set<string>>(() => {
-    const s = new Set<string>();
-    for (const id of initialCompletedIds) {
-      if (id.endsWith("-section")) s.add(id.slice(0, -8));
-    }
-    return s;
-  });
-
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [comments, setComments] = useState(initialComments);
   const [commentsPanelOpen, setCommentsPanelOpen] = useState(false);
   const [activeCommentSection, setActiveCommentSection] = useState<string | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
@@ -105,14 +106,18 @@ export default function ManualClient({
 
   const enabledSections = sections.filter((s) => enabledKeys.has(s.key));
   const totalTasks = enabledSections.reduce((sum, s) => sum + s.totalTasks, 0);
+  // Every section heading counts as one unit toward completion, on top of its own checkboxes.
+  const totalUnits = enabledSections.length + totalTasks;
 
   const completedCount = [...completedIds].filter((id) => {
     const key = id.split("-task-")[0];
     return enabledSections.some((s) => s.key === key);
   }).length;
+  const completedHeadings = enabledSections.filter((s) => manuallyCompleted.has(s.key)).length;
+  const completedUnits = completedHeadings + completedCount;
 
-  const overallPercent = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
-  const xp = completedCount * 10;
+  const overallPercent = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
+  const xp = completedUnits * 10;
   const level = getLevel(overallPercent);
 
   // ── Achievements ──────────────────────────────────────────────────────────
@@ -140,9 +145,8 @@ export default function ManualClient({
     prevPercentRef.current = overallPercent;
 
     enabledSections.forEach((s) => {
-      if (s.totalTasks === 0) return;
       const count = [...completedIds].filter((id) => id.startsWith(s.key + "-task-")).length;
-      const isFull = count === s.totalTasks;
+      const isFull = (s.totalTasks > 0 && count === s.totalTasks) || manuallyCompleted.has(s.key);
       const wasFull = prevCompletedSections.current.has(s.key);
       if (isFull && !wasFull) {
         showAchievement(`✓ "${s.title}" complete!`);
@@ -153,7 +157,7 @@ export default function ManualClient({
         prevCompletedSections.current = next;
       }
     });
-  }, [completedIds, overallPercent, enabledSections, showAchievement]);
+  }, [completedIds, overallPercent, enabledSections, showAchievement, manuallyCompleted]);
 
   // ── Task toggle (bidirectional) ───────────────────────────────────────────
 
@@ -310,8 +314,7 @@ export default function ManualClient({
           {enabledSections.map((s) => {
             const sCount = [...completedIds].filter((id) => id.startsWith(s.key + "-task-")).length;
             const isDone =
-              (s.totalTasks > 0 && sCount === s.totalTasks) ||
-              (s.totalTasks === 0 && manuallyCompleted.has(s.key));
+              (s.totalTasks > 0 && sCount === s.totalTasks) || manuallyCompleted.has(s.key);
             const isActive = activeSectionKey === s.key;
             return (
               <li key={s.key}>
@@ -342,7 +345,7 @@ export default function ManualClient({
         )}
 
         {/* ── Overall progress + gamification ── */}
-        {totalTasks > 0 && (
+        {totalUnits > 0 && (
           <div className="ciim-overall-progress print:hidden">
             <span className="ciim-xp-badge" style={{ background: level.color }}>
               {level.label}
@@ -351,7 +354,7 @@ export default function ManualClient({
               <div className="ciim-overall-progress-fill" style={{ width: `${overallPercent}%` }} />
             </div>
             <span className="ciim-overall-progress-label">
-              {completedCount}/{totalTasks} · {xp} XP · {overallPercent}%
+              {completedUnits}/{totalUnits} · {xp} XP · {overallPercent}%
             </span>
           </div>
         )}
@@ -417,7 +420,7 @@ export default function ManualClient({
             section.totalTasks > 0 ? Math.round((sectionCompleted / section.totalTasks) * 100) : 0;
           const isSectionComplete =
             (section.totalTasks > 0 && sectionCompleted === section.totalTasks) ||
-            (section.totalTasks === 0 && manuallyCompleted.has(section.key));
+            manuallyCompleted.has(section.key);
           const sectionComments = comments.filter((c) => c.section_key === section.key);
 
           if (!enabledKeys.has(section.key)) return null;
@@ -465,16 +468,14 @@ export default function ManualClient({
                     </div>
                   )}
 
-                  {/* Manual complete toggle for sections with no tasks */}
-                  {section.totalTasks === 0 && (
-                    <button
-                      className={`ciim-manual-done-btn${isSectionComplete ? " is-done" : ""}`}
-                      onClick={() => handleToggleManualComplete(section.key)}
-                      title={isSectionComplete ? "Mark incomplete" : "Mark complete"}
-                    >
-                      {isSectionComplete ? "✓ Done" : "Mark Done"}
-                    </button>
-                  )}
+                  {/* Manual "mark done" toggle — available on every section heading */}
+                  <button
+                    className={`ciim-manual-done-btn${manuallyCompleted.has(section.key) ? " is-done" : ""}`}
+                    onClick={() => handleToggleManualComplete(section.key)}
+                    title={manuallyCompleted.has(section.key) ? "Mark incomplete" : "Mark this section done"}
+                  >
+                    {manuallyCompleted.has(section.key) ? "✓ Done" : "Mark Done"}
+                  </button>
 
                   <button
                     className={`ciim-comment-btn${sectionComments.length > 0 ? " has-comments" : ""}`}
