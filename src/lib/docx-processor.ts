@@ -28,6 +28,7 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Configure Next Generation Coauthoring on Word for Windows": "CoAuthoring",
   "Installing iManage Reporting Tool": "reporting_tool",
   "Best Practices for Citrix/Remote Desktop Services": "Citrix_RDS",
+  "Plan for Integrated Third-Party Applications": "ThirdParty_Apps",
 };
 
 // ── Color preservation ──────────────────────────────────────────────────────

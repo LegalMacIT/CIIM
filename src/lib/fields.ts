@@ -55,6 +55,17 @@ export const BOOLEAN_KEYS = new Set([
   "Go_Live",
   "reporting_tool",
   "Citrix_RDS",
+  "ThirdParty_Apps",
+]);
+
+/**
+ * Boolean section keys that always render (never hidden), regardless of the
+ * stored field value. Used for content that should show for every customer
+ * but still needs a data-section wrapper so its checkboxes get persisted
+ * task IDs. Not exposed as a toggle in FIELD_GROUPS.
+ */
+export const ALWAYS_ENABLED_SECTION_KEYS = new Set([
+  "ThirdParty_Apps",
 ]);
 
 export const FIELD_GROUPS: FieldGroup[] = [

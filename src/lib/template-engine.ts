@@ -1,4 +1,4 @@
-import { CREDENTIAL_KEYS } from "./fields";
+import { ALWAYS_ENABLED_SECTION_KEYS, CREDENTIAL_KEYS } from "./fields";
 
 // Fields whose values are URLs — rendered as clickable anchor tags
 const URL_KEYS = new Set(["link_teams_channel", "cim_url", "work_url"]);
@@ -118,7 +118,7 @@ export function mergeTemplate(html: string, values: Record<string, string>): str
   result = result.replace(
     /(<[^>]+data-section="([^"]+)"[^>]*>)/g,
     (match, openTag: string, fieldKey: string) => {
-      const isEnabled = values[fieldKey] === "x";
+      const isEnabled = ALWAYS_ENABLED_SECTION_KEYS.has(fieldKey) || values[fieldKey] === "x";
       if (!isEnabled) return openTag.replace(/>$/, ` style="display:none">`);
       return openTag;
     }
