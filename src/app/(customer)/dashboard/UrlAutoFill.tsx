@@ -1,38 +1,52 @@
 "use client";
 import { useEffect } from "react";
 
-export default function UrlAutoFill() {
+export default function UrlAutoFill({ idPrefix = "" }: { idPrefix?: string }) {
   useEffect(() => {
-    // subdomain → cim_url
-    const subdomainInput = document.getElementById("subdomain") as HTMLInputElement | null;
-    const cimUrlInput = document.getElementById("cim_url") as HTMLInputElement | null;
-    if (subdomainInput && cimUrlInput) {
+    const byId = (key: string) =>
+      document.getElementById(`${idPrefix}${key}`) as HTMLInputElement | null;
+
+    // subdomain → cim_site, work_site
+    const subdomainInput = byId("subdomain");
+    const cimSiteInput = byId("cim_site");
+    const cimUrlInput = byId("cim_url");
+    const workSiteInput = byId("work_site");
+    const workUrlInput = byId("work_url");
+    if (subdomainInput) {
       subdomainInput.addEventListener("input", () => {
-        cimUrlInput.value = subdomainInput.value
-          ? `https://${subdomainInput.value}.cloudimanage.com`
-          : "https://cloudimanage.com";
-        // cascade into cim_site
-        const cimSiteInput = document.getElementById("cim_site") as HTMLInputElement | null;
-        if (cimSiteInput) cimSiteInput.value = cimUrlInput.value.replace(/^https?:\/\//, "");
+        if (cimSiteInput) {
+          cimSiteInput.value = subdomainInput.value
+            ? `${subdomainInput.value}.cloudimanage.com`
+            : "cloudimanage.com";
+          // cascade into cim_url
+          if (cimUrlInput) cimUrlInput.value = `https://${cimSiteInput.value}`;
+        }
+        if (workSiteInput) {
+          workSiteInput.value = subdomainInput.value
+            ? `${subdomainInput.value}-mobility.imanage.work`
+            : "mobility.imanage.work";
+          // cascade into work_url
+          if (workUrlInput) workUrlInput.value = `https://${workSiteInput.value}`;
+        }
       });
     }
 
-    // URL → site name (also fires when user edits the URL directly)
-    function wireUrlToSite(urlId: string, siteId: string) {
-      const urlInput = document.getElementById(urlId) as HTMLInputElement | null;
-      const siteInput = document.getElementById(siteId) as HTMLInputElement | null;
-      if (!urlInput || !siteInput) return;
-      urlInput.addEventListener("input", () => {
-        siteInput.value = urlInput.value.replace(/^https?:\/\//, "");
+    // site name → URL (also fires when user edits the site name directly)
+    function wireSiteToUrl(siteId: string, urlId: string) {
+      const siteInput = byId(siteId);
+      const urlInput = byId(urlId);
+      if (!siteInput || !urlInput) return;
+      siteInput.addEventListener("input", () => {
+        urlInput.value = siteInput.value ? `https://${siteInput.value}` : "";
       });
     }
 
-    wireUrlToSite("cim_url", "cim_site");
-    wireUrlToSite("work_url", "work_site");
+    wireSiteToUrl("cim_site", "cim_url");
+    wireSiteToUrl("work_site", "work_url");
 
     // Transition Start Time → Final Notification Time (-30 min)
-    const hourInput = document.getElementById("final_trans_hour") as HTMLInputElement | null;
-    const hour30Input = document.getElementById("final_trans_hour30") as HTMLInputElement | null;
+    const hourInput = byId("final_trans_hour");
+    const hour30Input = byId("final_trans_hour30");
     if (hourInput && hour30Input) {
       hourInput.addEventListener("change", () => {
         const parts = hourInput.value.split(":").map(Number);
@@ -46,19 +60,19 @@ export default function UrlAutoFill() {
       });
     }
 
-    // Final Transition Date → UAT Deadline Date (−7 days)
-    const transDateInput = document.getElementById("final_trans_date") as HTMLInputElement | null;
-    const uatDateInput = document.getElementById("uat_deadline_date") as HTMLInputElement | null;
+    // Final Transition Date → UAT Deadline Date (−2 weeks)
+    const transDateInput = byId("final_trans_date");
+    const uatDateInput = byId("uat_deadline_date");
     if (transDateInput && uatDateInput) {
       transDateInput.addEventListener("change", () => {
         if (transDateInput.value) {
           const d = new Date(transDateInput.value + "T12:00:00");
-          d.setDate(d.getDate() - 7);
+          d.setDate(d.getDate() - 14);
           uatDateInput.value = d.toISOString().split("T")[0];
         }
       });
     }
-  }, []);
+  }, [idPrefix]);
 
   return null;
 }

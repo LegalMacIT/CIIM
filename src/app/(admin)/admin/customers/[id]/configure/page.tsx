@@ -2,12 +2,15 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase";
-import { FIELD_GROUPS, BOOLEAN_KEYS, CREDENTIAL_KEYS, computeDerivedDefaults } from "@/lib/fields";
+import { FIELD_GROUPS, BOOLEAN_KEYS, CREDENTIAL_KEYS, FIELD_WIDTH_CLASS, computeDerivedDefaults } from "@/lib/fields";
 import { adminSaveFormValues } from "@/app/actions/customers";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import SaveConfigButton from "@/app/(customer)/dashboard/SaveConfigButton";
+import UrlAutoFill from "@/app/(customer)/dashboard/UrlAutoFill";
+import ClearCheckmarksButton from "@/app/(customer)/dashboard/ClearCheckmarksButton";
+import SelectAllCheckmarksButton from "@/app/(customer)/dashboard/SelectAllCheckmarksButton";
 import Link from "next/link";
 
 export default async function AdminConfigurePage({
@@ -106,9 +109,17 @@ export default async function AdminConfigurePage({
         <form action={saveForCustomer} className="space-y-5">
           {FIELD_GROUPS.map((group, gi) => (
             <div key={gi} className="ciim-dash-card">
-              <div className="ciim-dash-card-header">
-                <h2>{group.title}</h2>
-                {group.description && <p>{group.description}</p>}
+              <div className="ciim-dash-card-header flex items-start justify-between gap-3">
+                <div>
+                  <h2>{group.title}</h2>
+                  {group.description && <p>{group.description}</p>}
+                </div>
+                {group.fields[0].type === "boolean" && (
+                  <div className="flex flex-col items-end gap-1">
+                    <ClearCheckmarksButton fieldKeys={group.fields.map((f) => f.key)} idPrefix="f-" />
+                    <SelectAllCheckmarksButton fieldKeys={group.fields.map((f) => f.key)} idPrefix="f-" />
+                  </div>
+                )}
               </div>
               <div className="ciim-dash-card-body">
                 {group.fields[0].type === "boolean" ? (
@@ -116,6 +127,7 @@ export default async function AdminConfigurePage({
                     {group.fields.map((field) => (
                       <label key={field.key} className="ciim-dash-bool-item" htmlFor={`f-${field.key}`}>
                         <Checkbox
+                          key={`${field.key}:${values[field.key] !== ""}`}
                           id={`f-${field.key}`}
                           name={field.key}
                           defaultChecked={values[field.key] !== ""}
@@ -125,12 +137,12 @@ export default async function AdminConfigurePage({
                     ))}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-6 gap-4">
                     {group.fields.map((field) => {
                       const isCredential = CREDENTIAL_KEYS.has(field.key);
                       const hasSavedCredential = savedCredentials.has(field.key);
                       return (
-                        <div key={field.key}>
+                        <div key={field.key} className={FIELD_WIDTH_CLASS[field.width ?? "full"]}>
                           <div className="flex items-center gap-2 mb-1">
                             <label className="ciim-dash-label" htmlFor={`f-${field.key}`}>
                               {field.label}
@@ -145,6 +157,7 @@ export default async function AdminConfigurePage({
                             )}
                           </div>
                           <Input
+                            key={`${field.key}:${isCredential ? "" : (values[field.key] || derivedValues[field.key] || "")}`}
                             id={`f-${field.key}`}
                             name={field.key}
                             type={
@@ -179,6 +192,7 @@ export default async function AdminConfigurePage({
             </Link>
           </div>
         </form>
+        <UrlAutoFill idPrefix="f-" />
       </div>
     </div>
   );

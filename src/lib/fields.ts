@@ -4,12 +4,23 @@ export type FieldGroup = {
   fields: FieldDef[];
 };
 
+export type FieldWidth = "full" | "half" | "third";
+
 export type FieldDef = {
   key: string;
   label: string;
   type: "text" | "email" | "url" | "password" | "date" | "time" | "boolean";
   placeholder?: string;
   hint?: string;
+  /** Horizontal width within the form grid. Defaults to "full". */
+  width?: FieldWidth;
+};
+
+/** Tailwind col-span classes for a 6-column form grid, keyed by FieldWidth. */
+export const FIELD_WIDTH_CLASS: Record<FieldWidth, string> = {
+  full: "col-span-6",
+  half: "col-span-6 sm:col-span-3",
+  third: "col-span-6 sm:col-span-2",
 };
 
 export const CREDENTIAL_KEYS = new Set([
@@ -51,16 +62,16 @@ export const FIELD_GROUPS: FieldGroup[] = [
     title: "Company Information",
     fields: [
       { key: "firm_company_name", label: "Company Name", type: "text", placeholder: "Acme Law LLP" },
-      { key: "firm_company_nickname", label: "Company Nickname / Short Name", type: "text", placeholder: "Acme" },
-      { key: "firm_initials", label: "Company Initials", type: "text", placeholder: "ALL" },
+      { key: "firm_company_nickname", label: "Company Nickname / Short Name", type: "text", placeholder: "Acme", width: "half" },
+      { key: "firm_initials", label: "Company Initials", type: "text", placeholder: "ALL", width: "half" },
     ],
   },
   {
     title: "IT Contact",
     fields: [
-      { key: "it_contact1_fname", label: "First Name", type: "text" },
-      { key: "it_contact1_lname", label: "Last Name", type: "text" },
-      { key: "itcontact1_email", label: "Email", type: "email" },
+      { key: "it_contact1_fname", label: "First Name", type: "text", width: "third" },
+      { key: "it_contact1_lname", label: "Last Name", type: "text", width: "third" },
+      { key: "itcontact1_email", label: "Email", type: "email", width: "third" },
     ],
   },
   {
@@ -68,26 +79,26 @@ export const FIELD_GROUPS: FieldGroup[] = [
     description: "URLs and identifiers for your iManage Cloud tenant.",
     fields: [
       { key: "subdomain", label: "Subdomain", type: "text", placeholder: "acme", hint: "e.g. 'acme' from acme.imanage.work" },
-      { key: "cim_url", label: "Cloud iManage URL", type: "url", placeholder: "https://acme.cloudimanage.com" },
-      { key: "cim_site", label: "Cloud iManage Site Name", type: "text" },
-      { key: "work_url", label: "iManage Work URL", type: "url", placeholder: "https://acme.imanage.work" },
-      { key: "work_site", label: "iManage Work Site Name", type: "text" },
-      { key: "library_name1", label: "Primary Library Name", type: "text" },
-      { key: "library_name2", label: "Secondary Library Name", type: "text" },
-      { key: "tenant_id", label: "Tenant ID", type: "text" },
-      { key: "company_id", label: "Company ID", type: "text" },
+      { key: "cim_site", label: "Cloud iManage Site Name", type: "text", width: "half" },
+      { key: "cim_url", label: "Cloud iManage URL", type: "url", placeholder: "https://acme.cloudimanage.com", width: "half" },
+      { key: "work_site", label: "iManage Work Site Name", type: "text", width: "half" },
+      { key: "work_url", label: "iManage Work URL", type: "url", placeholder: "https://acme.imanage.work", width: "half" },
+      { key: "library_name1", label: "Primary Library Name", type: "text", width: "half" },
+      { key: "library_name2", label: "Secondary Library Name", type: "text", width: "half" },
+      { key: "tenant_id", label: "Tenant ID", type: "text", width: "half" },
+      { key: "company_id", label: "Company ID", type: "text", width: "half" },
       { key: "cloudadmin_email", label: "Cloud Admin Email", type: "email" },
     ],
   },
   {
     title: "Migration Timeline",
     fields: [
-      { key: "final_trans_date", label: "Final Transition Date", type: "date" },
-      { key: "final_trans_hour", label: "Transition Start Time", type: "time", hint: "e.g. 6:00 PM" },
-      { key: "final_trans_hour30", label: "Final Notification Time (-30 min)", type: "time", hint: "e.g. 5:30 PM" },
-      { key: "final_timezone", label: "Timezone", type: "text", placeholder: "Eastern Time (ET)" },
-      { key: "uat_doc_date", label: "Last Delta Migration Date", type: "date" },
-      { key: "uat_deadline_date", label: "UAT Deadline Date", type: "date" },
+      { key: "final_trans_date", label: "Final Transition Date", type: "date", width: "half" },
+      { key: "final_timezone", label: "Timezone", type: "text", placeholder: "Eastern Time (ET)", width: "half" },
+      { key: "final_trans_hour", label: "Transition Start Time", type: "time", hint: "e.g. 6:00 PM", width: "half" },
+      { key: "final_trans_hour30", label: "Final Notification Time (-30 min)", type: "time", hint: "e.g. 5:30 PM", width: "half" },
+      { key: "uat_doc_date", label: "Last Delta Migration Date", type: "date", width: "half" },
+      { key: "uat_deadline_date", label: "UAT Deadline Date", type: "date", width: "half" },
     ],
   },
   {
@@ -137,28 +148,35 @@ export const FIELD_GROUPS: FieldGroup[] = [
 export function computeDerivedDefaults(values: Record<string, string>): Record<string, string> {
   const derived: Record<string, string> = {};
 
-  // cim_url = https://{subdomain}.cloudimanage.com (or https://cloudimanage.com if no subdomain)
-  if (!values["cim_url"] && values["subdomain"] !== undefined) {
-    derived["cim_url"] = values["subdomain"]
-      ? `https://${values["subdomain"]}.cloudimanage.com`
-      : "https://cloudimanage.com";
+  // cim_site = {subdomain}.cloudimanage.com (or cloudimanage.com if no subdomain)
+  if (!values["cim_site"] && values["subdomain"] !== undefined) {
+    derived["cim_site"] = values["subdomain"]
+      ? `${values["subdomain"]}.cloudimanage.com`
+      : "cloudimanage.com";
   }
 
-  // cim_site = cim_url without "https://"
-  if (!values["cim_site"] && (values["cim_url"] || derived["cim_url"])) {
-    derived["cim_site"] = (values["cim_url"] || derived["cim_url"]).replace(/^https?:\/\//, "");
+  // cim_url = https:// + cim_site
+  if (!values["cim_url"] && (values["cim_site"] || derived["cim_site"])) {
+    derived["cim_url"] = `https://${values["cim_site"] || derived["cim_site"]}`;
   }
 
-  // work_site = work_url without "https://"
-  if (!values["work_site"] && values["work_url"]) {
-    derived["work_site"] = values["work_url"].replace(/^https?:\/\//, "");
+  // work_site = {subdomain}-mobility.imanage.work (or mobility.imanage.work if no subdomain)
+  if (!values["work_site"] && values["subdomain"] !== undefined) {
+    derived["work_site"] = values["subdomain"]
+      ? `${values["subdomain"]}-mobility.imanage.work`
+      : "mobility.imanage.work";
   }
 
-  // uat_deadline_date = final_trans_date − 7 days (YYYY-MM-DD)
+  // work_url = https:// + work_site
+  if (!values["work_url"] && (values["work_site"] || derived["work_site"])) {
+    derived["work_url"] = `https://${values["work_site"] || derived["work_site"]}`;
+  }
+
+  // uat_deadline_date = final_trans_date − 2 weeks (YYYY-MM-DD)
   if (!values["uat_deadline_date"] && values["final_trans_date"]) {
     try {
       const d = new Date(values["final_trans_date"] + "T12:00:00");
-      d.setDate(d.getDate() - 7);
+      d.setDate(d.getDate() - 14);
       derived["uat_deadline_date"] = d.toISOString().split("T")[0];
     } catch {
       // ignore invalid date

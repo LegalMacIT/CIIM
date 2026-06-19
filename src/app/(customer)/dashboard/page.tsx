@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase";
-import { FIELD_GROUPS, BOOLEAN_KEYS, CREDENTIAL_KEYS, computeDerivedDefaults } from "@/lib/fields";
+import { FIELD_GROUPS, BOOLEAN_KEYS, CREDENTIAL_KEYS, FIELD_WIDTH_CLASS, computeDerivedDefaults } from "@/lib/fields";
 import { saveFormValues } from "@/app/actions/form-values";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,6 +9,8 @@ import Link from "next/link";
 import DashboardPrintButton from "./DashboardPrintButton";
 import SaveConfigButton from "./SaveConfigButton";
 import UrlAutoFill from "./UrlAutoFill";
+import ClearCheckmarksButton from "./ClearCheckmarksButton";
+import SelectAllCheckmarksButton from "./SelectAllCheckmarksButton";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -205,9 +207,17 @@ export default async function DashboardPage() {
             <form action={saveFormValues} className="space-y-5">
               {FIELD_GROUPS.map((group, gi) => (
                 <div key={gi} className="ciim-dash-card">
-                  <div className="ciim-dash-card-header">
-                    <h2>{group.title}</h2>
-                    {group.description && <p>{group.description}</p>}
+                  <div className="ciim-dash-card-header flex items-start justify-between gap-3">
+                    <div>
+                      <h2>{group.title}</h2>
+                      {group.description && <p>{group.description}</p>}
+                    </div>
+                    {group.fields[0].type === "boolean" && (
+                      <div className="flex flex-col items-end gap-1">
+                        <ClearCheckmarksButton fieldKeys={group.fields.map((f) => f.key)} />
+                        <SelectAllCheckmarksButton fieldKeys={group.fields.map((f) => f.key)} />
+                      </div>
+                    )}
                   </div>
                   <div className="ciim-dash-card-body">
                     {group.fields[0].type === "boolean" ? (
@@ -215,6 +225,7 @@ export default async function DashboardPage() {
                         {group.fields.map((field) => (
                           <label key={field.key} className="ciim-dash-bool-item" htmlFor={field.key}>
                             <Checkbox
+                              key={`${field.key}:${values[field.key] !== ""}`}
                               id={field.key}
                               name={field.key}
                               defaultChecked={values[field.key] !== ""}
@@ -224,13 +235,14 @@ export default async function DashboardPage() {
                         ))}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 gap-4">
+                      <div className="grid grid-cols-6 gap-4">
                         {group.fields.map((field) => (
-                          <div key={field.key}>
+                          <div key={field.key} className={FIELD_WIDTH_CLASS[field.width ?? "full"]}>
                             <label className="ciim-dash-label" htmlFor={field.key}>
                               {field.label}
                             </label>
                             <Input
+                              key={`${field.key}:${values[field.key] || derivedValues[field.key] || ""}`}
                               id={field.key}
                               name={field.key}
                               type={
