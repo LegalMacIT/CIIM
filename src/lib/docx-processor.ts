@@ -344,6 +344,129 @@ function cleanupNestedLists(html: string): string {
   return html.replace(/<ul><li>(<ol>[\s\S]*?<\/ol>)<\/li><\/ul>/g, "$1");
 }
 
+// ── Ordered list split continuation ───────────────────────────────────────
+// mammoth creates a fresh <ol> (starting at 1) each time a numbered list is
+// interrupted by a non-list paragraph (URL text, notes, images). This function
+// detects consecutive <ol> elements separated only by <p> blocks, counts the
+// items in the first list, and sets start="N" on the continuation so numbering
+// flows continuously across the interruption. Handles nested lists correctly
+// by tracking depth. Runs after cleanupNestedLists so <ul><li><ol> shells
+// are already unwrapped before we look for split pairs.
+
+function findOlEnd(html: string, start: number): number {
+  let depth = 0;
+  let i = start;
+  while (i < html.length) {
+    if (html[i] === "<") {
+      if (html.startsWith("<ol", i) && (html[i + 3] === ">" || html[i + 3] === " ")) {
+        depth++;
+        i += 4;
+      } else if (html.startsWith("</ol>", i)) {
+        depth--;
+        if (depth === 0) return i + 5;
+        i += 5;
+      } else {
+        i++;
+      }
+    } else {
+      i++;
+    }
+  }
+  return html.length;
+}
+
+function countTopLevelLi(content: string): number {
+  let count = 0;
+  let depth = 0;
+  let i = 0;
+  while (i < content.length) {
+    if (content[i] === "<") {
+      if (
+        (content.startsWith("<ol", i) && (content[i + 3] === ">" || content[i + 3] === " ")) ||
+        (content.startsWith("<ul", i) && (content[i + 3] === ">" || content[i + 3] === " "))
+      ) {
+        depth++;
+        i += 4;
+      } else if (content.startsWith("</ol>", i) || content.startsWith("</ul>", i)) {
+        depth--;
+        i += 5;
+      } else if (
+        content.startsWith("<li", i) &&
+        (content[i + 3] === ">" || content[i + 3] === " ") &&
+        depth === 0
+      ) {
+        count++;
+        i += 3;
+      } else {
+        i++;
+      }
+    } else {
+      i++;
+    }
+  }
+  return count;
+}
+
+function fixSplitOrderedLists(html: string): string {
+  let result = html;
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    let i = 0;
+
+    while (i < result.length) {
+      const olStart = result.indexOf("<ol", i);
+      if (olStart === -1) break;
+      // Match <ol> and <ol start="N"> but not other tags starting with <ol
+      if (result[olStart + 3] !== ">" && result[olStart + 3] !== " ") {
+        i = olStart + 1;
+        continue;
+      }
+
+      const olOpenTagEnd = result.indexOf(">", olStart) + 1;
+      const olOpenTag = result.slice(olStart, olOpenTagEnd);
+      const olEnd = findOlEnd(result, olStart);
+      const olContent = result.slice(olOpenTagEnd, olEnd - 5); // between </opening-tag> and </ol>
+
+      // Scan ahead: accept only whitespace and <p>...</p> blocks between two <ol>s
+      let j = olEnd;
+      let hasPContent = false;
+
+      while (j < result.length) {
+        const wsMatch = result.slice(j).match(/^\s+/);
+        if (wsMatch) { j += wsMatch[0].length; continue; }
+
+        if (result.startsWith("<p", j)) {
+          const pClose = result.indexOf("</p>", j);
+          if (pClose === -1) break;
+          hasPContent = true;
+          j = pClose + 4;
+          continue;
+        }
+        break;
+      }
+
+      // Only patch bare <ol> continuations (no existing start attribute)
+      if (hasPContent && result.startsWith("<ol>", j)) {
+        const liCount = countTopLevelLi(olContent);
+        const startMatch = olOpenTag.match(/start="(\d+)"/);
+        const firstStart = startMatch ? parseInt(startMatch[1]) : 1;
+        const nextStart = firstStart + liCount;
+
+        result = result.slice(0, j) + `<ol start="${nextStart}">` + result.slice(j + 4);
+        changed = true;
+        // Re-examine from the newly patched <ol> so chained splits are resolved
+        i = j;
+      } else {
+        i = olEnd;
+      }
+    }
+  }
+
+  return result;
+}
+
 // ── TOC removal ───────────────────────────────────────────────────────────
 
 function stripTOC(html: string): string {
@@ -378,6 +501,7 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
       "p[style-name='ALL_CAPS'] => p.code-line:fresh",
       "p[style-name='Fixed_Font'] => p.fixed-font:fresh",
       "p[style-name='Tight_Lines_Indent'] => p.tight-lines-indent:fresh",
+      "p[style-name='List_Continue'] => p.list-continue:fresh",
       "r[style-name='Fixed font2'] => span.fixed-font:fresh",
       "r[style-name='Red font'] => span.red-font:fresh",
       "r[style-name='Blue_font'] => span.blue-font:fresh",
@@ -410,6 +534,7 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
   blocks = wrapHelpfulInsights(blocks);
   html = wrapSections(blocks);
   html = cleanupNestedLists(html);
+  html = fixSplitOrderedLists(html);
   html = stripTOC(html);
 
   return html;
