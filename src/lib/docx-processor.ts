@@ -504,7 +504,6 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
       "p[style-name='Fixed_Font'] => p.fixed-font:fresh",
       "p[style-name='Tight_Lines_Indent'] => p.tight-lines-indent:fresh",
       "p[style-name='List_Continue'] => p.list-continue:fresh",
-      "p[style-name='List Paragraph'] => p.list-paragraph:fresh",
       "r[style-name='Fixed font2'] => span.fixed-font:fresh",
       "r[style-name='Red font'] => span.red-font:fresh",
       "r[style-name='Blue_font'] => span.blue-font:fresh",
