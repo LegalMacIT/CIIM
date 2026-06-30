@@ -493,8 +493,8 @@ function fixSplitOrderedLists(html: string): string {
         break;
       }
 
-      // Only patch bare <ol> continuations (no existing start attribute)
-      if (hasPContent && result.startsWith("<ol>", j)) {
+      // Patch bare <ol> continuations whether separated by <p> tags or directly adjacent
+      if (result.startsWith("<ol>", j)) {
         const liCount = countTopLevelLi(olContent);
         const startMatch = olOpenTag.match(/start="(\d+)"/);
         const firstStart = startMatch ? parseInt(startMatch[1]) : 1;
