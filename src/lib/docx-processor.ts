@@ -340,10 +340,54 @@ function wrapSections(blocks: string[]): string {
 // ── Nested list cleanup ────────────────────────────────────────────────────
 // mammoth sometimes wraps <ol> items in <ul><li>…</li></ul> when Word uses
 // ListParagraph style for numbered content. Unwrap those spurious bullet shells.
+// The original regex only handled a single <ol> inside the <li>; this version
+// uses depth tracking so it correctly removes the wrapper even when the <li>
+// contains multiple consecutive <ol> elements (as seen in SCIM attribute mapping).
 
 function cleanupNestedLists(html: string): string {
-  // <ul><li><ol>…</ol></li></ul>  →  <ol>…</ol>
-  return html.replace(/<ul><li>(<ol>[\s\S]*?<\/ol>)<\/li><\/ul>/g, "$1");
+  let result = html;
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    let i = 0;
+
+    while (i < result.length) {
+      // Must start with <ul><li> where the <li> content begins with <ol>
+      if (!result.startsWith("<ul><li>", i)) { i++; continue; }
+
+      const liContentStart = i + 8;
+      if (!result.startsWith("<ol>", liContentStart)) { i++; continue; }
+
+      // Find the matching </li> by tracking <li> depth
+      let liDepth = 1;
+      let j = liContentStart;
+      while (j < result.length && liDepth > 0) {
+        if (result.startsWith("<li", j) && (result[j + 3] === ">" || result[j + 3] === " ")) {
+          liDepth++;
+          j += 3;
+        } else if (result.startsWith("</li>", j)) {
+          liDepth--;
+          if (liDepth === 0) break;
+          j += 5;
+        } else {
+          j++;
+        }
+      }
+
+      if (liDepth !== 0 || !result.startsWith("</li>", j)) { i++; continue; }
+
+      const liContent = result.slice(liContentStart, j);
+
+      // Only unwrap single-item <ul> (next tag after </li> must be </ul>)
+      if (!result.startsWith("</ul>", j + 5)) { i++; continue; }
+
+      result = result.slice(0, i) + liContent + result.slice(j + 10); // +10 skips </li></ul>
+      changed = true;
+    }
+  }
+
+  return result;
 }
 
 // ── Ordered list split continuation ───────────────────────────────────────
