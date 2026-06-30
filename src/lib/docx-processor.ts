@@ -157,7 +157,7 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
     const block = blocks[i];
     const text = headingText(block);
 
-    if (/^\s*(IT Tasks|Initial Setup Tasks)\s*$/.test(text)) {
+    if (/\b(IT Tasks|Initial Setup Tasks)\s*$/.test(text)) {
       const boxItems: string[] = [];
       i++;
       // Skip any intermediate "IT Tasks" label paragraph (e.g. from a text-box anchor)
@@ -174,9 +174,11 @@ function wrapITTaskBoxes(blocks: string[]): string[] {
         boxItems.push(b.startsWith("<table") ? flattenTableBlock(b) : b);
       }
       if (boxItems.length > 0) {
+        // Strip any leading {{field}} prefix so the header never double-prints the firm name
+        const baseLabel = text.trim().replace(/^\{\{[^}]+\}\}\s*/, "");
         output.push(
           `<div class="callout-it-box">` +
-            `<div class="callout-it-header">{{firm_company_nickname}} ${text.trim()}</div>` +
+            `<div class="callout-it-header">{{firm_company_nickname}} ${baseLabel}</div>` +
             boxItems.join("") +
             `</div>`
         );
