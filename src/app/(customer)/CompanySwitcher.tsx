@@ -33,7 +33,9 @@ export default function CompanySwitcher({
       disabled={isPending}
     >
       <SelectTrigger size="sm" className="h-8 text-sm min-w-[180px]">
-        <SelectValue placeholder="Select company" />
+        <SelectValue placeholder="Select company">
+          {(value: string) => companies.find((c) => c.id === value)?.company_name ?? "Select company"}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {companies.map((c) => (
