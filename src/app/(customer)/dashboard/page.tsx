@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase";
 import { FIELD_GROUPS, BOOLEAN_KEYS, CREDENTIAL_KEYS, FIELD_WIDTH_CLASS, computeDerivedDefaults } from "@/lib/fields";
 import { saveFormValues } from "@/app/actions/form-values";
+import { resolveCustomerId } from "@/app/actions/_customer";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
@@ -18,14 +19,7 @@ export default async function DashboardPage() {
 
   const supabase = createServiceClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: memberRow } = await (supabase as any)
-    .from("customer_members")
-    .select("customer_id")
-    .eq("clerk_user_id", userId)
-    .single();
-
-  const customerId = (memberRow as { customer_id: string } | null)?.customer_id;
+  const customerId = await resolveCustomerId(userId);
 
   const { data: customer } = customerId
     ? await supabase.from("customers").select("id, company_name").eq("id", customerId).single()

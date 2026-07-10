@@ -116,7 +116,7 @@ export async function addMember(_prev: ActionState, formData: FormData): Promise
   if (error) {
     return {
       error: (error.message ?? "").includes("unique")
-        ? "That Clerk user ID is already assigned to a company"
+        ? "That Clerk user ID is already a member of this company"
         : error.message,
     };
   }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase";
 import { mergeTemplate, splitManual } from "@/lib/template-engine";
 import { CREDENTIAL_KEYS } from "@/lib/fields";
+import { resolveCustomerId } from "@/app/actions/_customer";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import PrintButton from "./PrintButton";
@@ -15,14 +16,7 @@ export default async function ManualPage() {
 
   const supabase = createServiceClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: memberRow } = await (supabase as any)
-    .from("customer_members")
-    .select("customer_id")
-    .eq("clerk_user_id", userId)
-    .single();
-
-  const customerId = (memberRow as { customer_id: string } | null)?.customer_id;
+  const customerId = await resolveCustomerId(userId);
 
   const { data: customer } = customerId
     ? await supabase.from("customers").select("id, company_name").eq("id", customerId).single()

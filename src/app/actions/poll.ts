@@ -2,7 +2,7 @@
 
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { createServiceClient } from "@/lib/supabase";
-import { resolveCustomerId } from "./_customer";
+import { getUserCustomers } from "./_customer";
 import type { SectionCommentRow } from "@/lib/database.types";
 
 export async function pollManualState(customerId: string): Promise<{
@@ -12,8 +12,9 @@ export async function pollManualState(customerId: string): Promise<{
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
-  const memberCustomerId = await resolveCustomerId(userId);
-  if (memberCustomerId !== customerId) {
+  const memberCustomers = await getUserCustomers(userId);
+  const isMember = memberCustomers.some((c) => c.id === customerId);
+  if (!isMember) {
     const user = await currentUser();
     const isAdmin = (user?.publicMetadata as { role?: string })?.role === "admin";
     if (!isAdmin) throw new Error("Unauthorized");

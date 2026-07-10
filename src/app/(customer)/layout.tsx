@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { SignOutButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import { getUserCustomers, resolveCustomerId } from "@/app/actions/_customer";
+import CompanySwitcher from "./CompanySwitcher";
 
 export default async function CustomerLayout({
   children,
@@ -12,6 +14,11 @@ export default async function CustomerLayout({
 }) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
+
+  const [companies, activeCustomerId] = await Promise.all([
+    getUserCustomers(userId),
+    resolveCustomerId(userId),
+  ]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -35,7 +42,10 @@ export default async function CustomerLayout({
             </Link>
           </nav>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-3">
+          {companies.length > 1 && activeCustomerId && (
+            <CompanySwitcher companies={companies} activeId={activeCustomerId} />
+          )}
           <SignOutButton>
             <Button variant="ghost" size="sm" className="text-sm font-medium text-gray-600 hover:text-gray-900">
               Sign out
