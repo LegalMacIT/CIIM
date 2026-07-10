@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local reference material that may contain live API credentials (Postman exports, etc.)
+/docs/imanage-api/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
