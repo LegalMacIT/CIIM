@@ -110,8 +110,22 @@ span.copy-contents { color: #C00000 !important; }
 p.fixed-font { font-family: "Courier New", Courier, monospace !important; font-size: 0.875rem !important; background: #f5f5f5; padding: 0.1rem 0.4rem; border-radius: 3px; line-height: 1.2 !important; margin: 0.1rem 0 !important; }
 p.tight-lines-indent { font-family: "Courier New", Courier, monospace !important; font-size: 0.875rem !important; background: #f5f5f5 !important; padding: 0.1rem 0.4rem 0.1rem 1.5rem !important; line-height: 1.2 !important; margin: 0.1rem 0 !important; border-left: 3px solid #d1d5db !important; }
 span.fixed-font { font-family: "Courier New", Courier, monospace !important; font-size: 0.875em !important; }
+span.fixed-font-8pt { font-family: "Courier New", Courier, monospace !important; font-size: 0.625em !important; }
 span.red-font { color: #C00000 !important; }
 span.blue-font { color: #0070C0 !important; }
+/* Scoped to body content only — the cover page (.ciim-cover) has its own complete
+   typography system that already overrides all Word run styling, including link color. */
+.ciim-preamble span.hyperlink-inline, .ciim-section-content span.hyperlink-inline,
+.ciim-preamble span.hyperlink-13pt, .ciim-section-content span.hyperlink-13pt,
+.ciim-preamble span.hyperlink-8pt, .ciim-section-content span.hyperlink-8pt { color: #0563C1 !important; text-decoration: underline !important; }
+.ciim-preamble span.hyperlink-inline, .ciim-section-content span.hyperlink-inline { font-size: 0.8125em !important; }
+.ciim-preamble span.hyperlink-8pt, .ciim-section-content span.hyperlink-8pt { font-size: 0.625em !important; }
+/* Real clickable links already get the app's own link styling via `.ciim-section-content a`;
+   when one of the above character styles lands inside a real <a>, defer to the link's styling
+   instead of Word's static hyperlink-blue/underline so real links stay visually consistent. */
+.ciim-section-content a span.hyperlink-inline, .ciim-preamble a span.hyperlink-inline,
+.ciim-section-content a span.hyperlink-13pt, .ciim-preamble a span.hyperlink-13pt,
+.ciim-section-content a span.hyperlink-8pt, .ciim-preamble a span.hyperlink-8pt { color: inherit !important; text-decoration: inherit !important; }
 
 /* ── Orange IT Task callout ─────────────────────────── */
 .callout-it-box { border-left: 4px solid #C55A11; background: #fff7f0; border-radius: 0 6px 6px 0; margin: 1rem 0; overflow: hidden; }
