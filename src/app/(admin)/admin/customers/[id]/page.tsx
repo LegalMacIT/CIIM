@@ -1,3 +1,4 @@
+import { clerkClient } from "@clerk/nextjs/server";
 import { createServiceClient } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +22,29 @@ export default async function EditCustomerPage({
     (supabase as any).from("customer_members").select("clerk_user_id, joined_at").eq("customer_id", id).order("joined_at" as never),
   ]);
 
-  const members = membersRaw as unknown as { clerk_user_id: string; joined_at: string }[] | null;
+  const membersBase = membersRaw as unknown as { clerk_user_id: string; joined_at: string }[] | null;
+
+  const nameByClerkId = new Map<string, string>();
+  if (membersBase?.length) {
+    try {
+      const clerk = await clerkClient();
+      const { data: clerkUsers } = await clerk.users.getUserList({
+        userId: membersBase.map((m) => m.clerk_user_id),
+        limit: 200,
+      });
+      for (const u of clerkUsers) {
+        const fullName = [u.firstName, u.lastName].filter(Boolean).join(" ");
+        nameByClerkId.set(u.id, fullName || u.emailAddresses[0]?.emailAddress || "");
+      }
+    } catch {
+      // Clerk unavailable — names will be omitted
+    }
+  }
+
+  const members = membersBase?.map((m) => ({
+    ...m,
+    name: nameByClerkId.get(m.clerk_user_id) || null,
+  })) ?? null;
 
   if (!customer) notFound();
 

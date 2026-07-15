@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 interface Member {
   clerk_user_id: string;
   joined_at: string;
+  name?: string | null;
 }
 
 interface Props {
@@ -29,7 +30,8 @@ export default function MemberManager({ customerId, members }: Props) {
             return (
               <div key={m.clerk_user_id} className="py-2.5 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-mono">{m.clerk_user_id}</p>
+                  <p className="text-sm">{m.name || "Unknown user"}</p>
+                  <p className="text-xs font-mono text-gray-400 mt-0.5">{m.clerk_user_id}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     Added {new Date(m.joined_at).toLocaleDateString()}
                   </p>
