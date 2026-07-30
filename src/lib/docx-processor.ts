@@ -1,4 +1,5 @@
 import mammoth from "mammoth";
+import JSZip from "jszip";
 import { BOOLEAN_KEYS } from "./fields";
 
 // Heading text → boolean field key
@@ -234,6 +235,47 @@ function wrapHelpfulInsights(blocks: string[]): string[] {
       output.push(
         `<div class="callout-info">` +
           `<div class="callout-info-header">Helpful Insights</div>` +
+          content.join("") +
+          `</div>`
+      );
+      continue;
+    }
+
+    output.push(block);
+    i++;
+  }
+
+  return output;
+}
+
+// ── Editable block: Final Transition Cutover Checklist ────────────────────
+// This range covers migration-day logistics CARM and the client agree on
+// during planning — wording (owners, timing, escalation contacts) differs per
+// engagement, so it's marked as a live-editable block (pencil icon in the
+// manual) instead of being baked into the static template. Spans from the
+// "Final Transition Cutover Checklist" h3 through the end of the following
+// "Go Live Internal Communication Points" h3, stopping at the next h1/h2.
+const EDITABLE_BLOCK_HEADING = "Final Transition Cutover Checklist";
+const EDITABLE_BLOCK_KEY = "final_cutover_checklist";
+
+function wrapEditableBlocks(blocks: string[]): string[] {
+  const output: string[] = [];
+  let i = 0;
+
+  while (i < blocks.length) {
+    const block = blocks[i];
+
+    if (headingLevel(block) === 3 && headingText(block) === EDITABLE_BLOCK_HEADING) {
+      const content: string[] = [block];
+      i++;
+      while (i < blocks.length) {
+        const nextLevel = headingLevel(blocks[i]);
+        if (nextLevel !== null && nextLevel <= 2) break;
+        content.push(blocks[i]);
+        i++;
+      }
+      output.push(
+        `<div class="ciim-editable-block" data-editable-key="${EDITABLE_BLOCK_KEY}">` +
           content.join("") +
           `</div>`
       );
@@ -526,10 +568,55 @@ function stripTOC(html: string): string {
   return html;
 }
 
+// ── Word MERGEFIELD repair ─────────────────────────────────────────────────
+// When a merge code is inserted via Word's Insert > Quick Parts > Field (rather
+// than typed as literal «field» text), Word stores it as a <w:fldSimple> element
+// whose cached display value is the same «field» text we expect — but mammoth has
+// no reader for <w:fldSimple> at all, so the whole element (including its cached
+// text) is silently dropped. This leaves sentences that trail off mid-word (e.g.
+// "test SSO by logging into  as ." in the CARM CIIM template). Complex fields
+// (w:fldChar begin/separate/end) aren't affected — mammoth already passes their
+// cached display runs through untouched — so only <w:fldSimple> needs unwrapping.
+// We patch this before mammoth ever sees the document by unzipping the .docx,
+// replacing each <w:fldSimple w:instr="... MERGEFIELD ...">…</w:fldSimple> with
+// just its inner runs (dropping the field wrapper, keeping the cached «field»
+// text), and re-zipping. The existing «field» → {{field}} regex below then picks
+// up the recovered text exactly as it does for every other merge code.
+const MERGEFIELD_XML_PART_RE = /^word\/(document|header\d*|footer\d*)\.xml$/;
+
+function unwrapSimpleMergeFields(xml: string): string {
+  return xml.replace(
+    /<w:fldSimple\b[^>]*w:instr="[^"]*MERGEFIELD[^"]*"[^>]*>([\s\S]*?)<\/w:fldSimple>/g,
+    "$1"
+  );
+}
+
+async function repairMergeFields(buffer: Buffer): Promise<Buffer> {
+  const zip = await JSZip.loadAsync(buffer);
+  let changed = false;
+
+  for (const path of Object.keys(zip.files)) {
+    if (!MERGEFIELD_XML_PART_RE.test(path)) continue;
+    const file = zip.file(path);
+    if (!file) continue;
+
+    const xml = await file.async("string");
+    const patched = unwrapSimpleMergeFields(xml);
+    if (patched !== xml) {
+      zip.file(path, patched);
+      changed = true;
+    }
+  }
+
+  return changed ? zip.generateAsync({ type: "nodebuffer" }) : buffer;
+}
+
 // ── Main export ────────────────────────────────────────────────────────────
 
 export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string> {
-  const input = Buffer.isBuffer(buffer) ? { buffer } : { arrayBuffer: buffer };
+  const nodeBuffer = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+  const repairedBuffer = await repairMergeFields(nodeBuffer);
+  const input = { buffer: repairedBuffer };
   const colorTransform = buildColorTransform();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -583,6 +670,7 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
   let blocks = parseBlocks(html);
   blocks = wrapITTaskBoxes(blocks);
   blocks = wrapHelpfulInsights(blocks);
+  blocks = wrapEditableBlocks(blocks);
   html = wrapSections(blocks);
   html = cleanupNestedLists(html);
   html = fixSplitOrderedLists(html);

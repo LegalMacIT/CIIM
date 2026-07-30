@@ -205,6 +205,23 @@ span.blue-font { color: #0070C0 !important; }
 .ciim-copy-btn.copied .ciim-icon-clip { display: none; }
 .ciim-copy-btn.copied .ciim-icon-check { display: inline-block !important; }
 
+/* ── Editable block (pencil-to-edit sections) ───────────────────────── */
+.ciim-editable-block { position: relative; border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.5rem -0.75rem; transition: background 0.12s, box-shadow 0.12s; }
+.ciim-editable-block:hover { background: #fafaf7; box-shadow: inset 0 0 0 1px #ece6da; }
+.ciim-editable-block.is-editing { background: #fffdf7; box-shadow: inset 0 0 0 1.5px #C55A11; }
+.ciim-editable-content[contenteditable="true"] { outline: none; cursor: text; }
+.ciim-edit-pencil-btn { position: absolute; top: 0.4rem; right: 0.4rem; display: none; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; padding: 0; border: 1px solid #e5e7eb; border-radius: 5px; background: #fff; color: #6b7280; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+.ciim-editable-block:hover .ciim-edit-pencil-btn { display: flex; }
+.ciim-editable-block.is-editing .ciim-edit-pencil-btn { display: none; }
+.ciim-edit-pencil-btn:hover { border-color: #C55A11; color: #C55A11; }
+.ciim-edit-toolbar { display: none; gap: 0.5rem; justify-content: flex-end; margin-top: 0.625rem; }
+.ciim-editable-block.is-editing .ciim-edit-toolbar { display: flex; }
+.ciim-edit-save-btn, .ciim-edit-cancel-btn { border-radius: 6px; padding: 0.35rem 0.875rem; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
+.ciim-edit-save-btn { background: #C55A11; color: #fff; border: none; }
+.ciim-edit-save-btn:hover { background: #a3470d; }
+.ciim-edit-cancel-btn { background: none; border: 1px solid #d1d5db; color: #374151; }
+.ciim-edit-cancel-btn:hover { background: #f9fafb; }
+
 /* ── "Important" note highlight ─────────────────────── */
 .ciim-section-content p.note-important, .ciim-preamble p.note-important { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 4px 4px 0; padding: 0.5rem 0.75rem 0.5rem 2.375rem; margin: 0.5rem 0 0.75rem; position: relative; line-height: 1.5; }
 .ciim-section-content p.note-important::before, .ciim-preamble p.note-important::before { content: "⚠"; position: absolute; left: 0.625rem; top: 0.5rem; font-size: 0.9rem; color: #d97706; line-height: 1; }
@@ -248,5 +265,7 @@ span.blue-font { color: #0070C0 !important; }
   .ciim-print-hidden { display: none !important; }
   .ciim-missing { background: none !important; color: inherit !important; }
   .ciim-copy-btn { display: none !important; }
+  .ciim-edit-pencil-btn, .ciim-edit-toolbar { display: none !important; }
+  .ciim-editable-block { padding: 0; margin: 0; }
   .callout-it-box, .callout-info { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

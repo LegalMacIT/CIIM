@@ -77,6 +77,58 @@ function injectCopyButtons(html: string): string {
   );
 }
 
+// Find the </div> matching the div whose content starts at `contentStart`
+// (the opening tag has already been consumed). Depth-aware so nested divs
+// inside the block (if any) don't terminate the match early.
+function findMatchingDivEnd(html: string, contentStart: number): number {
+  let depth = 1;
+  let pos = contentStart;
+  while (pos < html.length && depth > 0) {
+    const nextOpen = html.indexOf("<div", pos);
+    const nextClose = html.indexOf("</div>", pos);
+    if (nextClose < 0) return -1;
+    if (nextOpen >= 0 && nextOpen < nextClose) {
+      depth++;
+      pos = nextOpen + 4;
+    } else {
+      depth--;
+      if (depth === 0) return nextClose;
+      pos = nextClose + 6;
+    }
+  }
+  return -1;
+}
+
+// Swap in a customer's saved edit for any <div class="ciim-editable-block"
+// data-editable-key="X"> block, keyed by `editable_X` in form_values. Falls
+// back to the template's own (already merged) content when no override is
+// stored yet — so the block always renders something sensible before anyone
+// has clicked the pencil.
+function applyEditableOverrides(html: string, values: Record<string, string>): string {
+  const openRe = /<div class="ciim-editable-block" data-editable-key="([^"]+)"[^>]*>/g;
+  let result = "";
+  let last = 0;
+  let m: RegExpExecArray | null;
+
+  while ((m = openRe.exec(html))) {
+    const key = m[1];
+    const contentStart = m.index + m[0].length;
+    const closeIdx = findMatchingDivEnd(html, contentStart);
+    if (closeIdx < 0) break; // malformed — leave the remainder untouched
+
+    result += html.slice(last, m.index);
+    const override = values[`editable_${key}`];
+    const inner = override ? override : html.slice(contentStart, closeIdx);
+    result += `<div class="ciim-editable-block" data-editable-key="${key}">${inner}</div>`;
+
+    last = closeIdx + 6; // skip past "</div>"
+    openRe.lastIndex = last;
+  }
+
+  result += html.slice(last);
+  return result;
+}
+
 // Convert bare https:// URLs in text nodes to anchor tags, skipping content already inside <a>
 function linkifyBareUrls(html: string): string {
   const URL_RE = /(https?:\/\/[^\s<>"')\]]+)/g;
@@ -124,6 +176,7 @@ export function mergeTemplate(html: string, values: Record<string, string>): str
     }
   );
 
+  result = applyEditableOverrides(result, values);
   result = injectCopyButtons(result);
   return linkifyBareUrls(result);
 }

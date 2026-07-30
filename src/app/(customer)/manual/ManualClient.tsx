@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { toggleTaskCompletion } from "@/app/actions/tasks";
 import { addComment, deleteComment } from "@/app/actions/comments";
 import { saveBooleanField } from "@/app/actions/form-values";
+import { saveEditableBlock } from "@/app/actions/editable-blocks";
 import { pollManualState } from "@/app/actions/poll";
 import type { ManualParts, ManualSection } from "@/lib/template-engine";
 import type { SectionCommentRow } from "@/lib/database.types";
@@ -506,6 +507,7 @@ export default function ManualClient({
                   section={section}
                   completedIdsRef={completedIdsRef}
                   onToggle={handleToggleTask}
+                  adminCustomerId={adminCustomerId}
                 />
               )}
             </div>
@@ -606,14 +608,18 @@ export default function ManualClient({
 // ── Section content ───────────────────────────────────────────────────────────
 // Memoized so it never re-renders when ManualClient state changes.
 
+const PENCIL_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`;
+
 const SectionContent = React.memo(function SectionContent({
   section,
   completedIdsRef,
   onToggle,
+  adminCustomerId,
 }: {
   section: ManualSection;
   completedIdsRef: React.RefObject<Set<string>>;
   onToggle: (taskId: string, checked: boolean) => void;
+  adminCustomerId?: string;
 }) {
   const divRef = useRef<HTMLDivElement>(null);
 
@@ -639,6 +645,94 @@ const SectionContent = React.memo(function SectionContent({
     div.addEventListener("change", handler);
     return () => div.removeEventListener("change", handler);
   }, [onToggle]);
+
+  // Wire up any live-editable blocks (e.g. the Final Transition Cutover Checklist):
+  // wrap their content in a dedicated inner div so contentEditable never lets the
+  // user delete the pencil/toolbar controls, then inject those controls.
+  useEffect(() => {
+    const div = divRef.current;
+    if (!div) return;
+    div.querySelectorAll<HTMLDivElement>(".ciim-editable-block").forEach((block) => {
+      if (block.dataset.wired) return;
+      block.dataset.wired = "1";
+
+      const contentWrap = document.createElement("div");
+      contentWrap.className = "ciim-editable-content";
+      while (block.firstChild) contentWrap.appendChild(block.firstChild);
+      block.appendChild(contentWrap);
+
+      const pencil = document.createElement("button");
+      pencil.type = "button";
+      pencil.className = "ciim-edit-pencil-btn print:hidden";
+      pencil.title = "Edit this section";
+      pencil.innerHTML = PENCIL_SVG;
+      block.appendChild(pencil);
+
+      const toolbar = document.createElement("div");
+      toolbar.className = "ciim-edit-toolbar print:hidden";
+      toolbar.innerHTML =
+        '<button type="button" class="ciim-edit-save-btn">Save</button>' +
+        '<button type="button" class="ciim-edit-cancel-btn">Cancel</button>';
+      block.appendChild(toolbar);
+    });
+  }, []);
+
+  // Event delegation — pencil / save / cancel for editable blocks
+  useEffect(() => {
+    const div = divRef.current;
+    if (!div) return;
+
+    const enterEdit = (block: HTMLDivElement) => {
+      const content = block.querySelector<HTMLDivElement>(":scope > .ciim-editable-content");
+      if (!content) return;
+      block.dataset.snapshot = content.innerHTML;
+      content.contentEditable = "true";
+      block.classList.add("is-editing");
+      content.focus();
+    };
+
+    const exitEdit = (block: HTMLDivElement) => {
+      const content = block.querySelector<HTMLDivElement>(":scope > .ciim-editable-content");
+      if (content) content.contentEditable = "false";
+      block.classList.remove("is-editing");
+    };
+
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Element;
+
+      const pencil = target.closest(".ciim-edit-pencil-btn");
+      if (pencil) {
+        const block = pencil.closest<HTMLDivElement>(".ciim-editable-block");
+        if (block) enterEdit(block);
+        return;
+      }
+
+      const saveBtn = target.closest(".ciim-edit-save-btn");
+      if (saveBtn) {
+        const block = saveBtn.closest<HTMLDivElement>(".ciim-editable-block");
+        const content = block?.querySelector<HTMLDivElement>(":scope > .ciim-editable-content");
+        const key = block?.dataset.editableKey;
+        if (!block || !content || !key) return;
+        const html = content.innerHTML;
+        exitEdit(block);
+        saveEditableBlock(key, html, adminCustomerId).catch(() => {
+          content.innerHTML = block.dataset.snapshot ?? content.innerHTML;
+        });
+        return;
+      }
+
+      const cancelBtn = target.closest(".ciim-edit-cancel-btn");
+      if (cancelBtn) {
+        const block = cancelBtn.closest<HTMLDivElement>(".ciim-editable-block");
+        const content = block?.querySelector<HTMLDivElement>(":scope > .ciim-editable-content");
+        if (block && content) content.innerHTML = block.dataset.snapshot ?? content.innerHTML;
+        if (block) exitEdit(block);
+      }
+    };
+
+    div.addEventListener("click", handler);
+    return () => div.removeEventListener("click", handler);
+  }, [adminCustomerId]);
 
   return (
     <div
