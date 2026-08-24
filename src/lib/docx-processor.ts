@@ -18,6 +18,7 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Creating a SAML SSO application for iManage Work 10 on Okta": "saml_okta",
   "Create a SAML SCIM application for iManage Work": "SCIM",
   "Install and Configure iManage Drive": "Drive",
+  "Install and Configure iManage Work Desktop for Mac OS": "Mac_Desktop",
   "Conduct User Acceptance Testing (UAT)": "UAT",
   "Install iManage Work for iPad and iPhone": "iOS_Mobility",
   "Install iManage File Transfer Extension": "File_Transfer",
