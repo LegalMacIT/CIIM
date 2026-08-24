@@ -5,8 +5,6 @@ import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase";
 import { resolveCustomerId } from "./_customer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 function toICSDate(dateStr: string, timeStr: string): string {
   const d = dateStr.replace(/-/g, "");
   const [h, m] = timeStr.split(":");
@@ -94,6 +92,7 @@ export async function sendCalendarInvite(adminCustomerId?: string): Promise<{ er
   const description = "This event is a placeholder on your calendar. You may forward this event to iManage C2C project team members.";
   const ics = buildICS(summary, description, date, time);
 
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const { error } = await resend.emails.send({
     from: "Hector Cruz <hcruz@carmconsulting.com>",
     to: [userEmail],

@@ -248,15 +248,31 @@ function wrapHelpfulInsights(blocks: string[]): string[] {
   return output;
 }
 
-// ── Editable block: Final Transition Cutover Checklist ────────────────────
-// This range covers migration-day logistics CARM and the client agree on
-// during planning — wording (owners, timing, escalation contacts) differs per
-// engagement, so it's marked as a live-editable block (pencil icon in the
-// manual) instead of being baked into the static template. Spans from the
-// "Final Transition Cutover Checklist" h3 through the end of the following
-// "Go Live Internal Communication Points" h3, stopping at the next h1/h2.
-const EDITABLE_BLOCK_HEADING = "Final Transition Cutover Checklist";
-const EDITABLE_BLOCK_KEY = "final_cutover_checklist";
+// ── Editable blocks: heading-bounded free-text sections ───────────────────
+// Content that differs per client engagement (or is purely narrative, with no
+// checkboxes/toggle plumbing riding on it) is marked as a live-editable block
+// (pencil icon in the manual) instead of being baked into the static template.
+// Each spec's range spans from its own heading through the last block before
+// the next heading at or above `stopAtLevel` — e.g. the h3 Cutover Checklist
+// stops at the next h1/h2, while the h1 Project Plan intro stops only at the
+// next h1 (so its "About this Document" h2 + intro paragraph are included).
+// The spec's own heading is rendered OUTSIDE the editable div, as a fixed
+// label — the editable-block sanitizer (src/app/actions/editable-blocks.ts)
+// doesn't allow heading tags, so a heading living inside the editable region
+// would degrade to plain text the first time anyone saves an edit. Keeping it
+// outside means its styling never depends on what got saved, and it can't be
+// accidentally deleted while editing the body below it.
+interface EditableHeadingBlockSpec {
+  heading: string;
+  level: number;
+  stopAtLevel: number;
+  key: string;
+}
+
+const EDITABLE_HEADING_BLOCKS: EditableHeadingBlockSpec[] = [
+  { heading: "Final Transition Cutover Checklist", level: 3, stopAtLevel: 2, key: "final_cutover_checklist" },
+  { heading: "Project Plan and Instruction Set", level: 1, stopAtLevel: 1, key: "project_plan_intro" },
+];
 
 function wrapEditableBlocks(blocks: string[]): string[] {
   const output: string[] = [];
@@ -264,18 +280,25 @@ function wrapEditableBlocks(blocks: string[]): string[] {
 
   while (i < blocks.length) {
     const block = blocks[i];
+    const level = headingLevel(block);
+    const spec =
+      level !== null
+        ? EDITABLE_HEADING_BLOCKS.find((s) => s.level === level && headingText(block) === s.heading)
+        : undefined;
 
-    if (headingLevel(block) === 3 && headingText(block) === EDITABLE_BLOCK_HEADING) {
-      const content: string[] = [block];
+    if (spec) {
+      const heading = block; // stays outside the editable div — see comment above
+      const content: string[] = [];
       i++;
       while (i < blocks.length) {
         const nextLevel = headingLevel(blocks[i]);
-        if (nextLevel !== null && nextLevel <= 2) break;
+        if (nextLevel !== null && nextLevel <= spec.stopAtLevel) break;
         content.push(blocks[i]);
         i++;
       }
       output.push(
-        `<div class="ciim-editable-block" data-editable-key="${EDITABLE_BLOCK_KEY}">` +
+        heading +
+          `<div class="ciim-editable-block" data-editable-key="${spec.key}">` +
           content.join("") +
           `</div>`
       );
@@ -287,6 +310,177 @@ function wrapEditableBlocks(blocks: string[]): string[] {
   }
 
   return output;
+}
+
+// ── Editable block: Title Page ─────────────────────────────────────────────
+// The cover page (client name, transition date, CARM contact info) is plain
+// <p> content with no bounding heading, so it's matched by its own markers
+// instead of headingLevel/headingText: starts at the "cover-title" paragraph
+// ("Cloud iManage C2C Transition") and ends at the paragraph containing the
+// carmconsulting.com link.
+const TITLE_PAGE_KEY = "title_page";
+
+function wrapTitlePageBlock(blocks: string[]): string[] {
+  const startIdx = blocks.findIndex((b) => b.includes('class="cover-title"'));
+  if (startIdx === -1) return blocks;
+
+  let endIdx = -1;
+  for (let i = startIdx; i < blocks.length; i++) {
+    if (blocks[i].toLowerCase().includes("carmconsulting.com")) {
+      endIdx = i;
+      break;
+    }
+  }
+  if (endIdx === -1) return blocks;
+
+  const content = blocks.slice(startIdx, endIdx + 1);
+  const wrapped = `<div class="ciim-editable-block" data-editable-key="${TITLE_PAGE_KEY}">${content.join("")}</div>`;
+
+  return [...blocks.slice(0, startIdx), wrapped, ...blocks.slice(endIdx + 1)];
+}
+
+// ── Editable sub-blocks within boolean-gated sections ──────────────────────
+// These sections are already wrapped in <div data-section="KEY"> by wrapSections
+// (drives the dashboard show/hide toggle) and some contain IT Tasks checklists
+// whose checkboxes (data-task-id) drive per-task completion tracking. The
+// editable-block sanitizer (src/app/actions/editable-blocks.ts) only allows
+// plain-text formatting, so wrapping a checklist in it would flatten its
+// checkboxes to text and break tracking the first time anyone saves an edit.
+// To keep both features intact, this runs *after* wrapSections (string-level,
+// not blocks-level) and carves out one or more editable regions per section via
+// `startMarker`/`stopBeforeMarker`, leaving checklists (and any other untouched
+// content) exactly as they were.
+interface GatedRegionSpec {
+  editableKey: string;
+  /** Regex matching the exact start of this region (searched from the end of the
+   *  previous region) — its match index becomes the boundary directly, so it must
+   *  match from the true start of the containing tag. Use `headingStartMarker()`
+   *  for heading-based starts: a plain text search landing mid-heading (e.g. right
+   *  after a mammoth bookmark anchor's "</a>") would back up to that anchor's own
+   *  "<", not the heading tag, and split the heading in half. Omit to start at the
+   *  beginning of the section (or right after the previous region). */
+  startMarker?: RegExp;
+  /** Text marking where this region stops (exclusive) — a plain substring inside
+   *  the following tag's own attributes (e.g. 'class="callout-it-box"'), safe to
+   *  back up from since the nearest preceding "<" is that same tag's opening
+   *  bracket. Omit to run through the end of the section. */
+  stopBeforeMarker?: string;
+}
+
+interface GatedEditableSpec {
+  sectionKey: string;
+  regions: GatedRegionSpec[];
+}
+
+// Matches a heading tag optionally preceded by mammoth's empty bookmark anchors
+// (e.g. <h3><a id="_Toc123"></a>Heading Text</h3>) so the match starts at the
+// heading tag itself rather than drifting into a preceding anchor's "</a>".
+function headingStartMarker(level: number, text: string): RegExp {
+  const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`<h${level}>(?:<a[^>]*></a>)*${escaped}</h${level}>`);
+}
+
+const GATED_EDITABLE_BLOCKS: GatedEditableSpec[] = [
+  {
+    sectionKey: "Upgrading_imWork",
+    regions: [{ editableKey: "upgrade_imwork_desktop", stopBeforeMarker: 'class="callout-it-box"' }],
+  },
+  {
+    sectionKey: "Drive",
+    regions: [
+      { editableKey: "install_configure_drive", stopBeforeMarker: 'class="callout-it-box"' },
+      {
+        editableKey: "install_configure_drive_details",
+        startMarker: headingStartMarker(3, "Installing and Configuring iManage Drive"),
+      },
+    ],
+  },
+  { sectionKey: "UAT", regions: [{ editableKey: "conduct_uat" }] },
+  { sectionKey: "Go_Live", regions: [{ editableKey: "go_live_issues" }] },
+];
+
+// Find the </div> matching the div whose content starts at `contentStart` (the
+// opening tag has already been consumed). Depth-aware so nested divs inside the
+// block (e.g. callout boxes) don't terminate the match early.
+function findMatchingDivEnd(html: string, contentStart: number): number {
+  let depth = 1;
+  let pos = contentStart;
+  while (pos < html.length && depth > 0) {
+    const nextOpen = html.indexOf("<div", pos);
+    const nextClose = html.indexOf("</div>", pos);
+    if (nextClose < 0) return -1;
+    if (nextOpen >= 0 && nextOpen < nextClose) {
+      depth++;
+      pos = nextOpen + 4;
+    } else {
+      depth--;
+      if (depth === 0) return nextClose;
+      pos = nextClose + 6;
+    }
+  }
+  return -1;
+}
+
+// A marker's index points into the middle of text content; back up to the start
+// of whatever tag encloses it so the editable region boundary doesn't split a tag.
+function backUpToTagStart(html: string, idx: number): number {
+  const tagStart = html.lastIndexOf("<", idx);
+  return tagStart >= 0 ? tagStart : idx;
+}
+
+// If `html` starts with a heading tag, splits it off so it can be rendered as a
+// fixed label outside the editable div instead of inside it — the editable-block
+// sanitizer doesn't allow heading tags, so a heading left inside the editable
+// region would degrade to plain text the first time anyone saves an edit.
+function splitLeadingHeading(html: string): { heading: string; rest: string } {
+  const m = /^<h([1-4])>.*?<\/h\1>/.exec(html);
+  if (!m) return { heading: "", rest: html };
+  return { heading: m[0], rest: html.slice(m[0].length) };
+}
+
+function wrapGatedEditableBlocks(html: string): string {
+  let result = html;
+
+  for (const spec of GATED_EDITABLE_BLOCKS) {
+    const openRe = new RegExp(`<div data-section="${spec.sectionKey}"[^>]*>`);
+    const m = openRe.exec(result);
+    if (!m) continue;
+
+    const contentStart = m.index + m[0].length;
+    const contentEnd = findMatchingDivEnd(result, contentStart);
+    if (contentEnd < 0) continue;
+
+    const inner = result.slice(contentStart, contentEnd);
+    let newInner = "";
+    let cursor = 0;
+
+    for (const region of spec.regions) {
+      let regionStart = cursor;
+      if (region.startMarker) {
+        const match = region.startMarker.exec(inner.slice(cursor));
+        if (!match) continue; // marker not found in this template — skip, leave content untouched
+        regionStart = cursor + match.index;
+      }
+
+      let regionEnd = inner.length;
+      if (region.stopBeforeMarker) {
+        const markerIdx = inner.indexOf(region.stopBeforeMarker, regionStart);
+        if (markerIdx >= 0) regionEnd = backUpToTagStart(inner, markerIdx);
+      }
+
+      const { heading, rest } = splitLeadingHeading(inner.slice(regionStart, regionEnd));
+
+      newInner += inner.slice(cursor, regionStart);
+      newInner += heading;
+      newInner += `<div class="ciim-editable-block" data-editable-key="${region.editableKey}">${rest}</div>`;
+      cursor = regionEnd;
+    }
+
+    newInner += inner.slice(cursor);
+    result = result.slice(0, contentStart) + newInner + result.slice(contentEnd);
+  }
+
+  return result;
 }
 
 // ── Section wrapping + task ID assignment ─────────────────────────────────
@@ -670,8 +864,10 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
   let blocks = parseBlocks(html);
   blocks = wrapITTaskBoxes(blocks);
   blocks = wrapHelpfulInsights(blocks);
+  blocks = wrapTitlePageBlock(blocks);
   blocks = wrapEditableBlocks(blocks);
   html = wrapSections(blocks);
+  html = wrapGatedEditableBlocks(html);
   html = cleanupNestedLists(html);
   html = fixSplitOrderedLists(html);
   html = stripTOC(html);

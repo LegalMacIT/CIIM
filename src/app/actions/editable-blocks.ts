@@ -13,6 +13,12 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ["p", "br", "strong", "em", "b", "i", "u", "ul", "ol", "li", "a", "span"],
   allowedAttributes: { a: ["href"] },
   allowedSchemes: ["http", "https", "mailto"],
+  // The Title Page's "Cloud iManage C2C Transition" line is a <p class="cover-title">
+  // (mammoth maps Word's "Title" paragraph style to a class, not a heading tag), and it
+  // stays part of the editable region since customers can rename it. Without this, the
+  // blanket attribute-stripping above would drop the class along with everything else,
+  // silently downgrading it to a plain paragraph the first time anyone saves an edit.
+  allowedClasses: { p: ["cover-title"] },
   transformTags: {
     a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer", target: "_blank" }),
   },
