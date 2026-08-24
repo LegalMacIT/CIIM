@@ -399,16 +399,17 @@ export default function ManualClient({
 
         {/* ── Cover page (bordered card) ── */}
         {coverHtml && (
-          <div
+          <EditableHtml
+            html={coverHtml}
             className="ciim-cover"
             style={{ lineHeight: 1.45, fontSize: "1rem", fontFamily: 'var(--font-sans), "Source Sans 3", sans-serif', color: "#2c2c2c" }}
-            dangerouslySetInnerHTML={{ __html: coverHtml }}
+            adminCustomerId={adminCustomerId}
           />
         )}
 
         {/* ── Preamble (TOC, Important Links, etc.) ── */}
         {preambleHtml && (
-          <div className="ciim-preamble" dangerouslySetInnerHTML={{ __html: preambleHtml }} />
+          <EditableHtml html={preambleHtml} className="ciim-preamble" adminCustomerId={adminCustomerId} />
         )}
 
         {/* ── Sections ── */}
@@ -610,45 +611,13 @@ export default function ManualClient({
 
 const PENCIL_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`;
 
-const SectionContent = React.memo(function SectionContent({
-  section,
-  completedIdsRef,
-  onToggle,
-  adminCustomerId,
-}: {
-  section: ManualSection;
-  completedIdsRef: React.RefObject<Set<string>>;
-  onToggle: (taskId: string, checked: boolean) => void;
-  adminCustomerId?: string;
-}) {
-  const divRef = useRef<HTMLDivElement>(null);
-
-  // Restore checkbox states on mount (runs on expand after collapse too)
-  useEffect(() => {
-    const div = divRef.current;
-    if (!div) return;
-    const ids = completedIdsRef.current;
-    div
-      .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-task-id]')
-      .forEach((cb) => { cb.checked = ids?.has(cb.dataset.taskId!) ?? false; });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Event delegation — bidirectional toggle
-  useEffect(() => {
-    const div = divRef.current;
-    if (!div) return;
-    const handler = (e: Event) => {
-      const cb = e.target as HTMLInputElement;
-      if (cb.type !== "checkbox" || !cb.dataset.taskId) return;
-      onToggle(cb.dataset.taskId, cb.checked);
-    };
-    div.addEventListener("change", handler);
-    return () => div.removeEventListener("change", handler);
-  }, [onToggle]);
-
-  // Wire up any live-editable blocks (e.g. the Final Transition Cutover Checklist):
-  // wrap their content in a dedicated inner div so contentEditable never lets the
-  // user delete the pencil/toolbar controls, then inject those controls.
+// Wire up any live-editable blocks (pencil icon, admin + customer) found inside the
+// given container: wraps their content in a dedicated inner div so contentEditable
+// never lets the user delete the pencil/toolbar controls, injects those controls, and
+// handles pencil / save / cancel via event delegation. Shared by SectionContent and
+// EditableHtml (cover page + preamble) so every editable block behaves identically
+// regardless of which part of the manual it lives in.
+function useEditableBlocks(divRef: React.RefObject<HTMLDivElement | null>, adminCustomerId?: string) {
   useEffect(() => {
     const div = divRef.current;
     if (!div) return;
@@ -675,9 +644,8 @@ const SectionContent = React.memo(function SectionContent({
         '<button type="button" class="ciim-edit-cancel-btn">Cancel</button>';
       block.appendChild(toolbar);
     });
-  }, []);
+  }, [divRef]);
 
-  // Event delegation — pencil / save / cancel for editable blocks
   useEffect(() => {
     const div = divRef.current;
     if (!div) return;
@@ -732,7 +700,65 @@ const SectionContent = React.memo(function SectionContent({
 
     div.addEventListener("click", handler);
     return () => div.removeEventListener("click", handler);
-  }, [adminCustomerId]);
+  }, [divRef, adminCustomerId]);
+}
+
+// Renders raw manual HTML (cover page, preamble) with editable-block wiring attached —
+// the counterpart to SectionContent for the parts of the manual that aren't inside a
+// <div data-section> wrapper.
+const EditableHtml = React.memo(function EditableHtml({
+  html,
+  className,
+  style,
+  adminCustomerId,
+}: {
+  html: string;
+  className?: string;
+  style?: React.CSSProperties;
+  adminCustomerId?: string;
+}) {
+  const divRef = useRef<HTMLDivElement>(null);
+  useEditableBlocks(divRef, adminCustomerId);
+  return <div ref={divRef} className={className} style={style} dangerouslySetInnerHTML={{ __html: html }} />;
+});
+
+const SectionContent = React.memo(function SectionContent({
+  section,
+  completedIdsRef,
+  onToggle,
+  adminCustomerId,
+}: {
+  section: ManualSection;
+  completedIdsRef: React.RefObject<Set<string>>;
+  onToggle: (taskId: string, checked: boolean) => void;
+  adminCustomerId?: string;
+}) {
+  const divRef = useRef<HTMLDivElement>(null);
+
+  // Restore checkbox states on mount (runs on expand after collapse too)
+  useEffect(() => {
+    const div = divRef.current;
+    if (!div) return;
+    const ids = completedIdsRef.current;
+    div
+      .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-task-id]')
+      .forEach((cb) => { cb.checked = ids?.has(cb.dataset.taskId!) ?? false; });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Event delegation — bidirectional toggle
+  useEffect(() => {
+    const div = divRef.current;
+    if (!div) return;
+    const handler = (e: Event) => {
+      const cb = e.target as HTMLInputElement;
+      if (cb.type !== "checkbox" || !cb.dataset.taskId) return;
+      onToggle(cb.dataset.taskId, cb.checked);
+    };
+    div.addEventListener("change", handler);
+    return () => div.removeEventListener("change", handler);
+  }, [onToggle]);
+
+  useEditableBlocks(divRef, adminCustomerId);
 
   return (
     <div

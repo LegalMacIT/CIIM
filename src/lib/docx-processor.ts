@@ -248,15 +248,25 @@ function wrapHelpfulInsights(blocks: string[]): string[] {
   return output;
 }
 
-// ── Editable block: Final Transition Cutover Checklist ────────────────────
-// This range covers migration-day logistics CARM and the client agree on
-// during planning — wording (owners, timing, escalation contacts) differs per
-// engagement, so it's marked as a live-editable block (pencil icon in the
-// manual) instead of being baked into the static template. Spans from the
-// "Final Transition Cutover Checklist" h3 through the end of the following
-// "Go Live Internal Communication Points" h3, stopping at the next h1/h2.
-const EDITABLE_BLOCK_HEADING = "Final Transition Cutover Checklist";
-const EDITABLE_BLOCK_KEY = "final_cutover_checklist";
+// ── Editable blocks: heading-bounded free-text sections ───────────────────
+// Content that differs per client engagement (or is purely narrative, with no
+// checkboxes/toggle plumbing riding on it) is marked as a live-editable block
+// (pencil icon in the manual) instead of being baked into the static template.
+// Each spec's range spans from its own heading through the last block before
+// the next heading at or above `stopAtLevel` — e.g. the h3 Cutover Checklist
+// stops at the next h1/h2, while the h1 Project Plan intro stops only at the
+// next h1 (so its "About this Document" h2 + intro paragraph are included).
+interface EditableHeadingBlockSpec {
+  heading: string;
+  level: number;
+  stopAtLevel: number;
+  key: string;
+}
+
+const EDITABLE_HEADING_BLOCKS: EditableHeadingBlockSpec[] = [
+  { heading: "Final Transition Cutover Checklist", level: 3, stopAtLevel: 2, key: "final_cutover_checklist" },
+  { heading: "Project Plan and Instruction Set", level: 1, stopAtLevel: 1, key: "project_plan_intro" },
+];
 
 function wrapEditableBlocks(blocks: string[]): string[] {
   const output: string[] = [];
@@ -264,18 +274,23 @@ function wrapEditableBlocks(blocks: string[]): string[] {
 
   while (i < blocks.length) {
     const block = blocks[i];
+    const level = headingLevel(block);
+    const spec =
+      level !== null
+        ? EDITABLE_HEADING_BLOCKS.find((s) => s.level === level && headingText(block) === s.heading)
+        : undefined;
 
-    if (headingLevel(block) === 3 && headingText(block) === EDITABLE_BLOCK_HEADING) {
+    if (spec) {
       const content: string[] = [block];
       i++;
       while (i < blocks.length) {
         const nextLevel = headingLevel(blocks[i]);
-        if (nextLevel !== null && nextLevel <= 2) break;
+        if (nextLevel !== null && nextLevel <= spec.stopAtLevel) break;
         content.push(blocks[i]);
         i++;
       }
       output.push(
-        `<div class="ciim-editable-block" data-editable-key="${EDITABLE_BLOCK_KEY}">` +
+        `<div class="ciim-editable-block" data-editable-key="${spec.key}">` +
           content.join("") +
           `</div>`
       );
@@ -287,6 +302,112 @@ function wrapEditableBlocks(blocks: string[]): string[] {
   }
 
   return output;
+}
+
+// ── Editable block: Title Page ─────────────────────────────────────────────
+// The cover page (client name, transition date, CARM contact info) is plain
+// <p> content with no bounding heading, so it's matched by its own markers
+// instead of headingLevel/headingText: starts at the "cover-title" paragraph
+// ("Cloud iManage C2C Transition") and ends at the paragraph containing the
+// carmconsulting.com link.
+const TITLE_PAGE_KEY = "title_page";
+
+function wrapTitlePageBlock(blocks: string[]): string[] {
+  const startIdx = blocks.findIndex((b) => b.includes('class="cover-title"'));
+  if (startIdx === -1) return blocks;
+
+  let endIdx = -1;
+  for (let i = startIdx; i < blocks.length; i++) {
+    if (blocks[i].toLowerCase().includes("carmconsulting.com")) {
+      endIdx = i;
+      break;
+    }
+  }
+  if (endIdx === -1) return blocks;
+
+  const content = blocks.slice(startIdx, endIdx + 1);
+  const wrapped = `<div class="ciim-editable-block" data-editable-key="${TITLE_PAGE_KEY}">${content.join("")}</div>`;
+
+  return [...blocks.slice(0, startIdx), wrapped, ...blocks.slice(endIdx + 1)];
+}
+
+// ── Editable sub-blocks within boolean-gated sections ──────────────────────
+// These sections are already wrapped in <div data-section="KEY"> by wrapSections
+// (drives the dashboard show/hide toggle) and two of them contain IT Tasks
+// checklists whose checkboxes (data-task-id) drive per-task completion tracking.
+// The editable-block sanitizer (src/app/actions/editable-blocks.ts) only allows
+// plain-text formatting, so wrapping a checklist in it would flatten its checkboxes
+// to text and break tracking the first time anyone saves an edit. To keep both
+// features intact, this runs *after* wrapSections (string-level, not blocks-level)
+// and either marks the whole section content editable (no checklist present) or
+// only the descriptive text preceding the checklist, via `stopBeforeMarker`.
+interface GatedEditableSpec {
+  sectionKey: string;
+  editableKey: string;
+  stopBeforeMarker?: string;
+}
+
+const GATED_EDITABLE_BLOCKS: GatedEditableSpec[] = [
+  { sectionKey: "Upgrading_imWork", editableKey: "upgrade_imwork_desktop", stopBeforeMarker: 'class="callout-it-box"' },
+  { sectionKey: "Drive", editableKey: "install_configure_drive", stopBeforeMarker: 'class="callout-it-box"' },
+  { sectionKey: "UAT", editableKey: "conduct_uat" },
+  { sectionKey: "Go_Live", editableKey: "go_live_issues" },
+];
+
+// Find the </div> matching the div whose content starts at `contentStart` (the
+// opening tag has already been consumed). Depth-aware so nested divs inside the
+// block (e.g. callout boxes) don't terminate the match early.
+function findMatchingDivEnd(html: string, contentStart: number): number {
+  let depth = 1;
+  let pos = contentStart;
+  while (pos < html.length && depth > 0) {
+    const nextOpen = html.indexOf("<div", pos);
+    const nextClose = html.indexOf("</div>", pos);
+    if (nextClose < 0) return -1;
+    if (nextOpen >= 0 && nextOpen < nextClose) {
+      depth++;
+      pos = nextOpen + 4;
+    } else {
+      depth--;
+      if (depth === 0) return nextClose;
+      pos = nextClose + 6;
+    }
+  }
+  return -1;
+}
+
+function wrapGatedEditableBlocks(html: string): string {
+  let result = html;
+
+  for (const spec of GATED_EDITABLE_BLOCKS) {
+    const openRe = new RegExp(`<div data-section="${spec.sectionKey}"[^>]*>`);
+    const m = openRe.exec(result);
+    if (!m) continue;
+
+    const contentStart = m.index + m[0].length;
+    const contentEnd = findMatchingDivEnd(result, contentStart);
+    if (contentEnd < 0) continue;
+
+    const inner = result.slice(contentStart, contentEnd);
+    const markerIdx = spec.stopBeforeMarker ? inner.indexOf(spec.stopBeforeMarker) : -1;
+
+    let editablePart = inner;
+    let restPart = "";
+    if (markerIdx >= 0) {
+      const tagStart = inner.lastIndexOf("<div", markerIdx);
+      const boundary = tagStart >= 0 ? tagStart : markerIdx;
+      editablePart = inner.slice(0, boundary);
+      restPart = inner.slice(boundary);
+    }
+
+    const newInner =
+      `<div class="ciim-editable-block" data-editable-key="${spec.editableKey}">${editablePart}</div>` +
+      restPart;
+
+    result = result.slice(0, contentStart) + newInner + result.slice(contentEnd);
+  }
+
+  return result;
 }
 
 // ── Section wrapping + task ID assignment ─────────────────────────────────
@@ -670,8 +791,10 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
   let blocks = parseBlocks(html);
   blocks = wrapITTaskBoxes(blocks);
   blocks = wrapHelpfulInsights(blocks);
+  blocks = wrapTitlePageBlock(blocks);
   blocks = wrapEditableBlocks(blocks);
   html = wrapSections(blocks);
+  html = wrapGatedEditableBlocks(html);
   html = cleanupNestedLists(html);
   html = fixSplitOrderedLists(html);
   html = stripTOC(html);
