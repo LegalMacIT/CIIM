@@ -333,25 +333,45 @@ function wrapTitlePageBlock(blocks: string[]): string[] {
 
 // ── Editable sub-blocks within boolean-gated sections ──────────────────────
 // These sections are already wrapped in <div data-section="KEY"> by wrapSections
-// (drives the dashboard show/hide toggle) and two of them contain IT Tasks
-// checklists whose checkboxes (data-task-id) drive per-task completion tracking.
-// The editable-block sanitizer (src/app/actions/editable-blocks.ts) only allows
-// plain-text formatting, so wrapping a checklist in it would flatten its checkboxes
-// to text and break tracking the first time anyone saves an edit. To keep both
-// features intact, this runs *after* wrapSections (string-level, not blocks-level)
-// and either marks the whole section content editable (no checklist present) or
-// only the descriptive text preceding the checklist, via `stopBeforeMarker`.
-interface GatedEditableSpec {
-  sectionKey: string;
+// (drives the dashboard show/hide toggle) and some contain IT Tasks checklists
+// whose checkboxes (data-task-id) drive per-task completion tracking. The
+// editable-block sanitizer (src/app/actions/editable-blocks.ts) only allows
+// plain-text formatting, so wrapping a checklist in it would flatten its
+// checkboxes to text and break tracking the first time anyone saves an edit.
+// To keep both features intact, this runs *after* wrapSections (string-level,
+// not blocks-level) and carves out one or more editable regions per section via
+// `startMarker`/`stopBeforeMarker`, leaving checklists (and any other untouched
+// content) exactly as they were.
+interface GatedRegionSpec {
   editableKey: string;
+  /** Text marking where this region starts (searched from the end of the previous
+   *  region). Omit to start at the beginning of the section (or right after the
+   *  previous region). */
+  startMarker?: string;
+  /** Text marking where this region stops (exclusive). Omit to run through the
+   *  end of the section. */
   stopBeforeMarker?: string;
 }
 
+interface GatedEditableSpec {
+  sectionKey: string;
+  regions: GatedRegionSpec[];
+}
+
 const GATED_EDITABLE_BLOCKS: GatedEditableSpec[] = [
-  { sectionKey: "Upgrading_imWork", editableKey: "upgrade_imwork_desktop", stopBeforeMarker: 'class="callout-it-box"' },
-  { sectionKey: "Drive", editableKey: "install_configure_drive", stopBeforeMarker: 'class="callout-it-box"' },
-  { sectionKey: "UAT", editableKey: "conduct_uat" },
-  { sectionKey: "Go_Live", editableKey: "go_live_issues" },
+  {
+    sectionKey: "Upgrading_imWork",
+    regions: [{ editableKey: "upgrade_imwork_desktop", stopBeforeMarker: 'class="callout-it-box"' }],
+  },
+  {
+    sectionKey: "Drive",
+    regions: [
+      { editableKey: "install_configure_drive", stopBeforeMarker: 'class="callout-it-box"' },
+      { editableKey: "install_configure_drive_details", startMarker: ">Installing and Configuring iManage Drive<" },
+    ],
+  },
+  { sectionKey: "UAT", regions: [{ editableKey: "conduct_uat" }] },
+  { sectionKey: "Go_Live", regions: [{ editableKey: "go_live_issues" }] },
 ];
 
 // Find the </div> matching the div whose content starts at `contentStart` (the
@@ -376,6 +396,13 @@ function findMatchingDivEnd(html: string, contentStart: number): number {
   return -1;
 }
 
+// A marker's index points into the middle of text content; back up to the start
+// of whatever tag encloses it so the editable region boundary doesn't split a tag.
+function backUpToTagStart(html: string, idx: number): number {
+  const tagStart = html.lastIndexOf("<", idx);
+  return tagStart >= 0 ? tagStart : idx;
+}
+
 function wrapGatedEditableBlocks(html: string): string {
   let result = html;
 
@@ -389,21 +416,29 @@ function wrapGatedEditableBlocks(html: string): string {
     if (contentEnd < 0) continue;
 
     const inner = result.slice(contentStart, contentEnd);
-    const markerIdx = spec.stopBeforeMarker ? inner.indexOf(spec.stopBeforeMarker) : -1;
+    let newInner = "";
+    let cursor = 0;
 
-    let editablePart = inner;
-    let restPart = "";
-    if (markerIdx >= 0) {
-      const tagStart = inner.lastIndexOf("<div", markerIdx);
-      const boundary = tagStart >= 0 ? tagStart : markerIdx;
-      editablePart = inner.slice(0, boundary);
-      restPart = inner.slice(boundary);
+    for (const region of spec.regions) {
+      let regionStart = cursor;
+      if (region.startMarker) {
+        const markerIdx = inner.indexOf(region.startMarker, cursor);
+        if (markerIdx < 0) continue; // marker not found in this template — skip, leave content untouched
+        regionStart = backUpToTagStart(inner, markerIdx);
+      }
+
+      let regionEnd = inner.length;
+      if (region.stopBeforeMarker) {
+        const markerIdx = inner.indexOf(region.stopBeforeMarker, regionStart);
+        if (markerIdx >= 0) regionEnd = backUpToTagStart(inner, markerIdx);
+      }
+
+      newInner += inner.slice(cursor, regionStart);
+      newInner += `<div class="ciim-editable-block" data-editable-key="${region.editableKey}">${inner.slice(regionStart, regionEnd)}</div>`;
+      cursor = regionEnd;
     }
 
-    const newInner =
-      `<div class="ciim-editable-block" data-editable-key="${spec.editableKey}">${editablePart}</div>` +
-      restPart;
-
+    newInner += inner.slice(cursor);
     result = result.slice(0, contentStart) + newInner + result.slice(contentEnd);
   }
 
