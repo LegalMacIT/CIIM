@@ -831,6 +831,13 @@ export async function processDocx(buffer: Buffer | ArrayBuffer): Promise<string>
       "p[style-name='Tight_Lines_Indent'] => p.tight-lines-indent:fresh",
       "p[style-name='List_Continue'] => p.list-continue:fresh",
       "p[style-name='Normal10pt'] => p.small-text:fresh",
+      // Cover page — these replace the old position-based (:nth-child) CSS guesses
+      // for the same elements, so the styling survives future template edits that
+      // reorder the cover page's paragraphs.
+      "p[style-name='Heading1Center'] => p.cover-name:fresh",
+      "r[style-name='Sarif18'] => span.cover-subtitle:fresh",
+      "r[style-name='Small Type'] => span.cover-small:fresh",
+      "p[style-name='Sarif13'] => p.cover-disclaimer:fresh",
       "r[style-name='Fixed font2'] => span.fixed-font:fresh",
       "r[style-name='Fixed_Font10pt'] => span.fixed-font:fresh",
       "r[style-name='Fixed_Font8pt'] => span.fixed-font-8pt:fresh",
