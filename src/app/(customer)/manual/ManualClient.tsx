@@ -10,6 +10,13 @@ import type { ManualParts, ManualSection } from "@/lib/template-engine";
 import type { SectionCommentRow } from "@/lib/database.types";
 import { FIELD_GROUPS, CREDENTIAL_KEYS } from "@/lib/fields";
 
+const COVER_STYLE: React.CSSProperties = {
+  lineHeight: 1.45,
+  fontSize: "1rem",
+  fontFamily: 'var(--font-sans), "Source Sans 3", sans-serif',
+  color: "#2c2c2c",
+};
+
 // ── Gamification ──────────────────────────────────────────────────────────────
 
 const LEVELS = [
@@ -402,7 +409,7 @@ export default function ManualClient({
           <EditableHtml
             html={coverHtml}
             className="ciim-cover"
-            style={{ lineHeight: 1.45, fontSize: "1rem", fontFamily: 'var(--font-sans), "Source Sans 3", sans-serif', color: "#2c2c2c" }}
+            style={COVER_STYLE}
             adminCustomerId={adminCustomerId}
           />
         )}
