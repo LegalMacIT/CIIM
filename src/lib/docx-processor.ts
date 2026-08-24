@@ -344,18 +344,32 @@ function wrapTitlePageBlock(blocks: string[]): string[] {
 // content) exactly as they were.
 interface GatedRegionSpec {
   editableKey: string;
-  /** Text marking where this region starts (searched from the end of the previous
-   *  region). Omit to start at the beginning of the section (or right after the
-   *  previous region). */
-  startMarker?: string;
-  /** Text marking where this region stops (exclusive). Omit to run through the
-   *  end of the section. */
+  /** Regex matching the exact start of this region (searched from the end of the
+   *  previous region) — its match index becomes the boundary directly, so it must
+   *  match from the true start of the containing tag. Use `headingStartMarker()`
+   *  for heading-based starts: a plain text search landing mid-heading (e.g. right
+   *  after a mammoth bookmark anchor's "</a>") would back up to that anchor's own
+   *  "<", not the heading tag, and split the heading in half. Omit to start at the
+   *  beginning of the section (or right after the previous region). */
+  startMarker?: RegExp;
+  /** Text marking where this region stops (exclusive) — a plain substring inside
+   *  the following tag's own attributes (e.g. 'class="callout-it-box"'), safe to
+   *  back up from since the nearest preceding "<" is that same tag's opening
+   *  bracket. Omit to run through the end of the section. */
   stopBeforeMarker?: string;
 }
 
 interface GatedEditableSpec {
   sectionKey: string;
   regions: GatedRegionSpec[];
+}
+
+// Matches a heading tag optionally preceded by mammoth's empty bookmark anchors
+// (e.g. <h3><a id="_Toc123"></a>Heading Text</h3>) so the match starts at the
+// heading tag itself rather than drifting into a preceding anchor's "</a>".
+function headingStartMarker(level: number, text: string): RegExp {
+  const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`<h${level}>(?:<a[^>]*></a>)*${escaped}</h${level}>`);
 }
 
 const GATED_EDITABLE_BLOCKS: GatedEditableSpec[] = [
@@ -367,7 +381,10 @@ const GATED_EDITABLE_BLOCKS: GatedEditableSpec[] = [
     sectionKey: "Drive",
     regions: [
       { editableKey: "install_configure_drive", stopBeforeMarker: 'class="callout-it-box"' },
-      { editableKey: "install_configure_drive_details", startMarker: ">Installing and Configuring iManage Drive<" },
+      {
+        editableKey: "install_configure_drive_details",
+        startMarker: headingStartMarker(3, "Installing and Configuring iManage Drive"),
+      },
     ],
   },
   { sectionKey: "UAT", regions: [{ editableKey: "conduct_uat" }] },
@@ -422,9 +439,9 @@ function wrapGatedEditableBlocks(html: string): string {
     for (const region of spec.regions) {
       let regionStart = cursor;
       if (region.startMarker) {
-        const markerIdx = inner.indexOf(region.startMarker, cursor);
-        if (markerIdx < 0) continue; // marker not found in this template — skip, leave content untouched
-        regionStart = backUpToTagStart(inner, markerIdx);
+        const match = region.startMarker.exec(inner.slice(cursor));
+        if (!match) continue; // marker not found in this template — skip, leave content untouched
+        regionStart = cursor + match.index;
       }
 
       let regionEnd = inner.length;
