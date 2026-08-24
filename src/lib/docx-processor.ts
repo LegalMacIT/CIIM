@@ -256,6 +256,12 @@ function wrapHelpfulInsights(blocks: string[]): string[] {
 // the next heading at or above `stopAtLevel` — e.g. the h3 Cutover Checklist
 // stops at the next h1/h2, while the h1 Project Plan intro stops only at the
 // next h1 (so its "About this Document" h2 + intro paragraph are included).
+// The spec's own heading is rendered OUTSIDE the editable div, as a fixed
+// label — the editable-block sanitizer (src/app/actions/editable-blocks.ts)
+// doesn't allow heading tags, so a heading living inside the editable region
+// would degrade to plain text the first time anyone saves an edit. Keeping it
+// outside means its styling never depends on what got saved, and it can't be
+// accidentally deleted while editing the body below it.
 interface EditableHeadingBlockSpec {
   heading: string;
   level: number;
@@ -281,7 +287,8 @@ function wrapEditableBlocks(blocks: string[]): string[] {
         : undefined;
 
     if (spec) {
-      const content: string[] = [block];
+      const heading = block; // stays outside the editable div — see comment above
+      const content: string[] = [];
       i++;
       while (i < blocks.length) {
         const nextLevel = headingLevel(blocks[i]);
@@ -290,7 +297,8 @@ function wrapEditableBlocks(blocks: string[]): string[] {
         i++;
       }
       output.push(
-        `<div class="ciim-editable-block" data-editable-key="${spec.key}">` +
+        heading +
+          `<div class="ciim-editable-block" data-editable-key="${spec.key}">` +
           content.join("") +
           `</div>`
       );
@@ -420,6 +428,16 @@ function backUpToTagStart(html: string, idx: number): number {
   return tagStart >= 0 ? tagStart : idx;
 }
 
+// If `html` starts with a heading tag, splits it off so it can be rendered as a
+// fixed label outside the editable div instead of inside it — the editable-block
+// sanitizer doesn't allow heading tags, so a heading left inside the editable
+// region would degrade to plain text the first time anyone saves an edit.
+function splitLeadingHeading(html: string): { heading: string; rest: string } {
+  const m = /^<h([1-4])>.*?<\/h\1>/.exec(html);
+  if (!m) return { heading: "", rest: html };
+  return { heading: m[0], rest: html.slice(m[0].length) };
+}
+
 function wrapGatedEditableBlocks(html: string): string {
   let result = html;
 
@@ -450,8 +468,11 @@ function wrapGatedEditableBlocks(html: string): string {
         if (markerIdx >= 0) regionEnd = backUpToTagStart(inner, markerIdx);
       }
 
+      const { heading, rest } = splitLeadingHeading(inner.slice(regionStart, regionEnd));
+
       newInner += inner.slice(cursor, regionStart);
-      newInner += `<div class="ciim-editable-block" data-editable-key="${region.editableKey}">${inner.slice(regionStart, regionEnd)}</div>`;
+      newInner += heading;
+      newInner += `<div class="ciim-editable-block" data-editable-key="${region.editableKey}">${rest}</div>`;
       cursor = regionEnd;
     }
 
