@@ -29,6 +29,8 @@ const HEADING_TO_FIELD: Record<string, string> = {
   "Approve Request for URL Redirection": "URL_Redirect",
   "Configure Next Generation Coauthoring on Word for Windows": "CoAuthoring",
   "Installing iManage Reporting Tool": "reporting_tool",
+  "Installing iManage Support Reporting Tool": "reporting_tool",
+  "Renaming User ID with the iManage Reporting Tool": "Rename_User_ID",
   "Best Practices for Citrix/Remote Desktop Services": "Citrix_RDS",
   "Plan for Integrated Third-Party Applications": "ThirdParty_Apps",
 };
