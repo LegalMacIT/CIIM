@@ -2,6 +2,8 @@ import { createServiceClient } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import TemplateUpload from "./TemplateUpload";
+import DeployStatusCard from "./DeployStatusCard";
+import { getDeployStatus } from "@/lib/deploy-status";
 
 export default async function AdminTemplatePage() {
   const supabase = createServiceClient();
@@ -18,6 +20,8 @@ export default async function AdminTemplatePage() {
     .order("version", { ascending: false })
     .limit(10);
 
+  const deployStatus = await getDeployStatus();
+
   return (
     <div className="max-w-3xl space-y-8 p-8">
       <div>
@@ -26,6 +30,8 @@ export default async function AdminTemplatePage() {
           Upload a new .docx to update the manual all clients see.
         </p>
       </div>
+
+      <DeployStatusCard status={deployStatus} />
 
       <Card>
         <CardHeader>
