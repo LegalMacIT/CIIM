@@ -119,7 +119,7 @@ function headingText(block: string): string {
 
 function markImportantNotes(html: string): string {
   return html.replace(
-    /<p([^>]*)>((?:\s*<(?:strong|em|b|span)[^>]*>\s*)?Important\s*:)/gi,
+    /<p([^>]*)>((?:\s*<(?:strong|em|b|span)[^>]*>\s*)*Important\s*:)/gi,
     (_, attrs: string, prefix: string) => {
       if (attrs.includes("note-important")) return `<p${attrs}>${prefix}`;
       const newAttrs = /class="[^"]*"/.test(attrs)
