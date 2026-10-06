@@ -118,16 +118,34 @@ function headingText(block: string): string {
 // and injects the class "note-important" for CSS icon + highlight treatment.
 
 function markImportantNotes(html: string): string {
-  return html.replace(
+  // Word often splits one red "IMPORTANT:" into several runs (edits, spell-check),
+  // which mammoth emits as adjacent <span class="red-font"> elements. Rejoin them
+  // so the red text reads as one unit. A black colon stays outside the span, so
+  // red "IMPORTANT" + black ":" still deliberately does not trigger the note.
+  const adjacentRed = /(<span class="red-font">(?:(?!<\/?span\b)[\s\S])*)<\/span><span class="red-font">/g;
+  while (adjacentRed.test(html)) html = html.replace(adjacentRed, "$1");
+
+  html = html.replace(
     /<p([^>]*)>((?:\s*<(?:strong|em|b|span)[^>]*>\s*)*Important\s*:)/gi,
-    (_, attrs: string, prefix: string) => {
-      if (attrs.includes("note-important")) return `<p${attrs}>${prefix}`;
-      const newAttrs = /class="[^"]*"/.test(attrs)
-        ? attrs.replace(/class="([^"]*)"/, 'class="$1 note-important"')
-        : `${attrs} class="note-important"`;
-      return `<p${newAttrs}>${prefix}`;
-    }
+    (_, attrs: string, prefix: string) => `<p${withImportantClass(attrs)}>${prefix}`
   );
+
+  // Red text that reads "Important:" once tags are stripped, e.g.
+  // <span class="red-font"><strong>IMPORTANT</strong>: </span>
+  return html.replace(
+    /<p([^>]*)>((?:\s*<(?:strong|em|b)[^>]*>\s*)*<span class="red-font">((?:(?!<\/?span\b)[\s\S])*)<\/span>)/gi,
+    (m, attrs: string, prefix: string, inner: string) =>
+      /^\s*Important\s*:/i.test(inner.replace(/<[^>]+>/g, ""))
+        ? `<p${withImportantClass(attrs)}>${prefix}`
+        : m
+  );
+}
+
+function withImportantClass(attrs: string): string {
+  if (attrs.includes("note-important")) return attrs;
+  return /class="[^"]*"/.test(attrs)
+    ? attrs.replace(/class="([^"]*)"/, 'class="$1 note-important"')
+    : `${attrs} class="note-important"`;
 }
 
 // ── Callout: orange IT Task boxes ──────────────────────────────────────────
